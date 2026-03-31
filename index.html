@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<!-- saved from url=(0057)file:///C:/Users/jcare/Downloads/herbicide-tracker_9.html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>UMW Weed &amp; Herbicide Tracker</title>
+<link rel="stylesheet" href="./index_files/leaflet.min.css">
+<script src="./index_files/leaflet.min.js.download"></script>
+<style>
+  :root {
+    --green-dark: #1a2e1a;
+    --green-mid: #2d4a2d;
+    --green-light: #3d6b3d;
+    --green-accent: #5a9e5a;
+    --tan: #c8b89a;
+    --cream: #f4f0e8;
+    --red: #c0392b;
+    --orange: #e07b28;
+    --yellow: #c8960a;
+    --gray: #7a7a7a;
+    --archived: #9b9b9b;
+    --white: #ffffff;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  html { height: 100%; }
+
+  body {
+    height: 100%;
+    height: -webkit-fill-available;
+    overflow: hidden;
+    font-family: Georgia, serif;
+    background: var(--green-dark);
+    color: var(--cream);
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    background: var(--green-dark);
+    padding: 10px 16px 0;
+    flex-shrink: 0;
+    border-bottom: 2px solid var(--green-light);
+    padding-top: max(10px, env(safe-area-inset-top));
+  }
+
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .app-title    { font-size:13px; letter-spacing:.12em; text-transform:uppercase; color:var(--tan); }
+  .app-subtitle { font-size:10px; color:var(--green-accent); letter-spacing:.08em; text-transform:uppercase; margin-top:1px; }
+
+  .header-badge {
+    background: var(--green-mid);
+    border: 1px solid var(--green-accent);
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 10px;
+    color: var(--tan);
+    letter-spacing: .06em;
+  }
+
+  .tabs { display:flex; gap:2px; }
+
+  .tab {
+    flex:1; padding:8px 4px; text-align:center;
+    font-size:11px; letter-spacing:.07em; text-transform:uppercase;
+    cursor:pointer; border-radius:4px 4px 0 0;
+    color:var(--tan); background:var(--green-mid);
+    border:1px solid transparent; border-bottom:none;
+    user-select:none;
+  }
+  .tab.active { background:var(--cream); color:var(--green-dark); border-color:var(--tan); font-weight:bold; }
+
+  /* ---- panels ---- */
+  .panel { display:none; flex:1; flex-direction:column; overflow:hidden; background:var(--cream); min-height:0; }
+  .panel.active { display:flex; }
+
+  /* The key iOS fix: map-wrap must be a positioned block with explicit pixel height set via JS */
+  .map-wrap { position:relative; flex:1; min-height:0; overflow:hidden; }
+
+  /* Leaflet container must fill its parent absolutely */
+  .leaflet-container { position:absolute !important; inset:0; width:100% !important; height:100% !important; }
+
+  .map-tap-hint {
+    position:absolute; bottom:12px; left:50%; transform:translateX(-50%);
+    background:rgba(26,46,26,.88); color:var(--tan);
+    padding:6px 14px; border-radius:20px; font-size:11px;
+    letter-spacing:.06em; pointer-events:none; z-index:500;
+    white-space:nowrap; border:1px solid var(--green-light);
+  }
+
+  .locate-btn {
+    position:absolute; top:10px; right:10px; z-index:500;
+    background:var(--green-dark); border:1.5px solid var(--green-light);
+    color:var(--tan); border-radius:6px; padding:8px 11px;
+    font-size:16px; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,.3);
+  }
+
+  .layer-btn {
+    position:absolute; top:10px; left:10px; z-index:500;
+    background:var(--green-dark); border:1.5px solid var(--green-light);
+    color:var(--tan); border-radius:6px; padding:6px 10px;
+    font-size:10px; letter-spacing:.06em; text-transform:uppercase;
+    cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,.3);
+  }
+
+  .legend {
+    display:flex; gap:10px; flex-wrap:wrap;
+    padding:6px 14px; background:var(--green-dark);
+    border-top:1px solid var(--green-mid); flex-shrink:0;
+  }
+  .legend-item { display:flex; align-items:center; gap:5px; font-size:10px; color:var(--tan); }
+  .legend-dot  { width:10px; height:10px; border-radius:50%; border:1.5px solid rgba(255,255,255,.3); flex-shrink:0; }
+
+  /* ---- drawer ---- */
+  .drawer { background:var(--green-dark); border-top:2px solid var(--green-light); flex-shrink:0; z-index:10; }
+  .drawer-handle { display:flex; align-items:center; justify-content:space-between; padding:8px 14px; cursor:pointer; user-select:none; }
+  .drawer-title  { font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--tan); }
+  .drawer-toggle { font-size:14px; color:var(--green-accent); transition:transform .2s; display:inline-block; }
+  .drawer.open .drawer-toggle { transform:rotate(180deg); }
+  .drawer-body { display:none; padding:0 14px 12px; max-height:250px; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  .drawer.open .drawer-body { display:block; }
+
+  /* ---- lists ---- */
+  .site-list { margin-top:4px; }
+
+  .site-item {
+    background:var(--green-mid); border-radius:5px; padding:9px 11px;
+    margin-bottom:7px; display:flex; align-items:center; gap:10px;
+    border-left:4px solid var(--gray); cursor:pointer;
+  }
+  .site-item.fresh    { border-left-color:var(--red); }
+  .site-item.aging    { border-left-color:var(--yellow); }
+  .site-item.old      { border-left-color:var(--gray); }
+  .site-item.archived { opacity:.5; }
+
+  .site-info  { flex:1; min-width:0; }
+  .site-name  { font-size:13px; color:var(--cream); font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .site-meta  { font-size:10px; color:var(--tan); margin-top:2px; }
+
+  .app-log-item {
+    background:var(--green-mid); border-radius:5px; padding:9px 11px;
+    margin-bottom:7px; display:flex; align-items:center; gap:10px;
+    border-left:4px solid var(--green-accent); cursor:pointer;
+  }
+  .app-log-item.compliance-logged { border-left-color:var(--archived); opacity:.55; }
+  .log-info { flex:1; min-width:0; }
+  .log-name { font-size:13px; color:var(--cream); font-weight:bold; }
+  .log-meta { font-size:10px; color:var(--tan); margin-top:2px; }
+
+  .empty-state { text-align:center; padding:20px; color:var(--green-accent); font-size:12px; letter-spacing:.06em; text-transform:uppercase; }
+
+  .csv-row { display:flex; gap:8px; margin-top:8px; }
+
+  /* ---- chips ---- */
+  .chip { display:inline-block; border-radius:3px; padding:2px 6px; font-size:9px; letter-spacing:.06em; text-transform:uppercase; font-weight:bold; white-space:nowrap; flex-shrink:0; }
+  .chip-red      { background:var(--red);         color:#fff; }
+  .chip-yellow   { background:var(--yellow);       color:#fff; }
+  .chip-gray     { background:var(--gray);         color:#fff; }
+  .chip-green    { background:var(--green-accent); color:#fff; }
+  .chip-archived { background:var(--archived);     color:#fff; }
+
+  /* ---- forms ---- */
+  .form-row   { display:flex; gap:8px; margin-bottom:8px; }
+  .form-group { flex:1; display:flex; flex-direction:column; gap:3px; }
+
+  label { font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--tan); }
+
+  input, select, textarea {
+    background:var(--green-mid); border:1px solid var(--green-light);
+    border-radius:4px; color:var(--cream);
+    font-size:16px; /* critical: prevents iOS zoom */
+    padding:7px 8px; font-family:inherit; width:100%;
+    -webkit-appearance:none; appearance:none;
+  }
+  input::placeholder, textarea::placeholder { color:var(--green-accent); font-size:14px; }
+  textarea { resize:none; height:52px; }
+
+  /* ---- buttons ---- */
+  .btn {
+    border:none; border-radius:5px; font-family:Georgia,serif;
+    font-size:12px; letter-spacing:.06em; cursor:pointer;
+    padding:10px 14px; text-transform:uppercase;
+    transition:filter .15s, transform .1s;
+  }
+  .btn:active { transform:scale(.97); filter:brightness(.9); }
+  .btn-primary { background:var(--green-accent); color:#fff; }
+  .btn-warn    { background:var(--orange);       color:#fff; }
+  .btn-danger  { background:var(--red);          color:#fff; }
+  .btn-ghost   { background:transparent; border:1px solid var(--green-accent); color:var(--green-accent); }
+  .btn-sm      { padding:6px 10px; font-size:11px; }
+  .btn-row     { display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; }
+
+  /* ---- modals ---- */
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.65); z-index:2000; align-items:flex-end; justify-content:center; }
+  .modal-overlay.open { display:flex; }
+  .modal {
+    background:var(--green-dark); border-top:2px solid var(--green-light);
+    border-radius:16px 16px 0 0; width:100%; max-width:640px;
+    padding:20px 18px; padding-bottom:max(24px, env(safe-area-inset-bottom));
+    max-height:92dvh; overflow-y:auto; -webkit-overflow-scrolling:touch;
+  }
+  .modal-title { font-size:14px; letter-spacing:.1em; text-transform:uppercase; color:var(--tan); margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid var(--green-mid); }
+
+  .tab-count { display:inline-block; background:var(--red); color:#fff; border-radius:10px; font-size:9px; padding:1px 5px; margin-left:4px; vertical-align:middle; font-weight:bold; min-width:16px; text-align:center; }
+  .tab.active .tab-count { background:var(--green-light); }
+
+  .gps-dot { display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--green-accent); margin-right:5px; animation:pulse 1.8s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.35;transform:scale(.65)} }
+
+  .detail-table { width:100%; font-size:12px; border-collapse:collapse; }
+  .detail-table td { padding:5px 6px 5px 0; vertical-align:top; }
+  .detail-table td:first-child { color:var(--tan); font-size:10px; text-transform:uppercase; letter-spacing:.05em; white-space:nowrap; padding-right:10px; width:1%; }
+  .detail-table td:last-child  { color:var(--cream); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <div>
+      <div class="app-title">UMW Grounds</div>
+      <div class="app-subtitle">Weed &amp; Herbicide Tracker</div>
+    </div>
+    <div class="header-badge"><span class="gps-dot"></span><span id="header-date">Mar 31, 2026</span></div>
+  </div>
+  <div class="tabs">
+    <div class="tab active" id="tab-scout" onclick="switchTab(&#39;scout&#39;)">🌿 Weed Scouting <span class="tab-count" id="scout-count">0</span></div>
+    <div class="tab" id="tab-herb" onclick="switchTab(&#39;herb&#39;)">🧪 Applications <span class="tab-count" id="herb-count">0</span></div>
+  </div>
+</header>
+
+<!-- SCOUT PANEL -->
+<div class="panel active" id="panel-scout">
+  <div class="map-wrap" id="scout-wrap">
+    <div id="scout-map" class="leaflet-container leaflet-touch leaflet-retina leaflet-fade-anim leaflet-grab leaflet-touch-drag leaflet-touch-zoom" tabindex="0"><div class="leaflet-pane leaflet-map-pane" style="transform: translate3d(0px, 0px, 0px);"><div class="leaflet-pane leaflet-tile-pane"><div class="leaflet-layer " style="z-index: 1; opacity: 1;"><div class="leaflet-tile-container leaflet-zoom-animated" style="z-index: 20; transform: translate3d(389px, 237px, 0px) scale(0.25);"></div><div class="leaflet-tile-container leaflet-zoom-animated" style="z-index: 22; transform: translate3d(259px, 158px, 0px) scale(1);"><img alt="" src="./index_files/6302" class="leaflet-tile leaflet-tile-loaded" style="width: 512px; height: 512px; transform: translate3d(-225px, -37px, 0px); opacity: 1;"><img alt="" src="./index_files/6302(1)" class="leaflet-tile leaflet-tile-loaded" style="width: 512px; height: 512px; transform: translate3d(287px, -37px, 0px); opacity: 1;"><img alt="" src="./index_files/6301" class="leaflet-tile leaflet-tile-loaded" style="width: 512px; height: 512px; transform: translate3d(-225px, -549px, 0px); opacity: 1;"><img alt="" src="./index_files/6301(1)" class="leaflet-tile leaflet-tile-loaded" style="width: 512px; height: 512px; transform: translate3d(287px, -549px, 0px); opacity: 1;"><img alt="" src="./index_files/6301(2)" class="leaflet-tile leaflet-tile-loaded" style="width: 512px; height: 512px; transform: translate3d(-737px, -549px, 0px); opacity: 1;"><img alt="" src="./index_files/6301(3)" class="leaflet-tile leaflet-tile-loaded" style="width: 512px; height: 512px; transform: translate3d(799px, -549px, 0px); opacity: 1;"><img alt="" src="./index_files/6302(2)" class="leaflet-tile leaflet-tile-loaded" style="width: 512px; height: 512px; transform: translate3d(-737px, -37px, 0px); opacity: 1;"><img alt="" src="./index_files/6302(3)" class="leaflet-tile leaflet-tile-loaded" style="width: 512px; height: 512px; transform: translate3d(799px, -37px, 0px); opacity: 1;"></div></div></div><div class="leaflet-pane leaflet-overlay-pane"></div><div class="leaflet-pane leaflet-shadow-pane"></div><div class="leaflet-pane leaflet-marker-pane"></div><div class="leaflet-pane leaflet-tooltip-pane"></div><div class="leaflet-pane leaflet-popup-pane"></div><div class="leaflet-proxy leaflet-zoom-animated" style="transform: translate3d(2.38907e+06px, 3.22675e+06px, 0px) scale(16384);"></div></div><div class="leaflet-control-container"><div class="leaflet-top leaflet-left"><div class="leaflet-control-zoom leaflet-bar leaflet-control"><a class="leaflet-control-zoom-in" href="file:///C:/Users/jcare/Downloads/herbicide-tracker_9.html#" title="Zoom in" role="button" aria-label="Zoom in" aria-disabled="false"><span aria-hidden="true">+</span></a><a class="leaflet-control-zoom-out" href="file:///C:/Users/jcare/Downloads/herbicide-tracker_9.html#" title="Zoom out" role="button" aria-label="Zoom out" aria-disabled="false"><span aria-hidden="true">−</span></a></div></div><div class="leaflet-top leaflet-right"></div><div class="leaflet-bottom leaflet-left"></div><div class="leaflet-bottom leaflet-right"><div class="leaflet-control-attribution leaflet-control"><a href="https://leafletjs.com/" title="A JavaScript library for interactive maps"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="12" height="8" viewBox="0 0 12 8" class="leaflet-attribution-flag"><path fill="#4C7BE1" d="M0 0h12v4H0z"></path><path fill="#FFD500" d="M0 4h12v3H0z"></path><path fill="#E0BC00" d="M0 7h12v1H0z"></path></svg> Leaflet</a> <span aria-hidden="true">|</span> © <a href="https://www.mapbox.com/">Mapbox</a> © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a></div></div></div></div>
+    <button class="locate-btn" onclick="locateMe(&#39;scout&#39;)">📍</button>
+    <button class="layer-btn" id="scout-layer-btn" onclick="toggleLayer(&#39;scout&#39;)">🛰 Satellite</button>
+    <div class="map-tap-hint">Tap map to flag a weed problem</div>
+  </div>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>&lt;7 days</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--yellow)"></div>7–30 days</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--gray)"></div>&gt;30 days</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--archived)"></div>Archived</div>
+  </div>
+  <div class="drawer" id="scout-drawer">
+    <div class="drawer-handle" onclick="toggleDrawer(&#39;scout-drawer&#39;)">
+      <span class="drawer-title">Flagged Sites</span><span class="drawer-toggle">▲</span>
+    </div>
+    <div class="drawer-body">
+      <div class="site-list" id="scout-list"><div class="empty-state">No active sites</div></div>
+      <div class="csv-row">
+        <button class="btn btn-ghost btn-sm" onclick="exportCSV(&#39;scout&#39;)" style="flex:1">⬇ Export</button>
+        <button class="btn btn-ghost btn-sm" onclick="triggerImport(&#39;scout&#39;)" style="flex:1">⬆ Import CSV</button>
+        <button class="btn btn-ghost btn-sm" onclick="showArchived(&#39;scout&#39;)" style="flex:1">📁 Archived</button>
+      </div>
+      <input type="file" id="import-scout" accept=".csv" style="display:none" onchange="importCSV(event,&#39;scout&#39;)">
+    </div>
+  </div>
+</div>
+
+<!-- HERB PANEL -->
+<div class="panel" id="panel-herb">
+  <div class="map-wrap" id="herb-wrap">
+    <div id="herb-map" class="leaflet-container leaflet-touch leaflet-retina leaflet-fade-anim leaflet-grab leaflet-touch-drag leaflet-touch-zoom" tabindex="0"><div class="leaflet-pane leaflet-map-pane" style="transform: translate3d(0px, 0px, 0px);"><div class="leaflet-pane leaflet-tile-pane"><div class="leaflet-layer " style="z-index: 1; opacity: 1;"><div class="leaflet-tile-container leaflet-zoom-animated" style="z-index: 22; transform: translate3d(0px, 0px, 0px) scale(1);"><img alt="" src="./index_files/25209" class="leaflet-tile leaflet-tile-loaded" style="width: 512px; height: 512px; transform: translate3d(-511px, -198px, 0px); opacity: 1;"></div></div></div><div class="leaflet-pane leaflet-overlay-pane"></div><div class="leaflet-pane leaflet-shadow-pane"></div><div class="leaflet-pane leaflet-marker-pane"></div><div class="leaflet-pane leaflet-tooltip-pane"></div><div class="leaflet-pane leaflet-popup-pane"></div><div class="leaflet-proxy leaflet-zoom-animated" style="transform: translate3d(9.55597e+06px, 1.29072e+07px, 0px) scale(65536);"></div></div><div class="leaflet-control-container"><div class="leaflet-top leaflet-left"><div class="leaflet-control-zoom leaflet-bar leaflet-control"><a class="leaflet-control-zoom-in" href="file:///C:/Users/jcare/Downloads/herbicide-tracker_9.html#" title="Zoom in" role="button" aria-label="Zoom in" aria-disabled="false"><span aria-hidden="true">+</span></a><a class="leaflet-control-zoom-out" href="file:///C:/Users/jcare/Downloads/herbicide-tracker_9.html#" title="Zoom out" role="button" aria-label="Zoom out" aria-disabled="false"><span aria-hidden="true">−</span></a></div></div><div class="leaflet-top leaflet-right"></div><div class="leaflet-bottom leaflet-left"></div><div class="leaflet-bottom leaflet-right"><div class="leaflet-control-attribution leaflet-control"><a href="https://leafletjs.com/" title="A JavaScript library for interactive maps"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="12" height="8" viewBox="0 0 12 8" class="leaflet-attribution-flag"><path fill="#4C7BE1" d="M0 0h12v4H0z"></path><path fill="#FFD500" d="M0 4h12v3H0z"></path><path fill="#E0BC00" d="M0 7h12v1H0z"></path></svg> Leaflet</a> <span aria-hidden="true">|</span> © <a href="https://www.mapbox.com/">Mapbox</a> © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a></div></div></div></div>
+    <button class="locate-btn" onclick="locateMe(&#39;herb&#39;)">📍</button>
+    <button class="layer-btn" id="herb-layer-btn" onclick="toggleLayer(&#39;herb&#39;)">🛰 Satellite</button>
+    <div class="map-tap-hint">Tap map to log an application</div>
+  </div>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:var(--green-accent)"></div>Pending compliance</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--archived)"></div>Compliance filed</div>
+  </div>
+  <div class="drawer" id="herb-drawer">
+    <div class="drawer-handle" onclick="toggleDrawer(&#39;herb-drawer&#39;)">
+      <span class="drawer-title">Application Log</span><span class="drawer-toggle">▲</span>
+    </div>
+    <div class="drawer-body">
+      <div class="site-list" id="herb-list"><div class="empty-state">No active application records</div></div>
+      <div class="csv-row">
+        <button class="btn btn-ghost btn-sm" onclick="exportCSV(&#39;herb&#39;)" style="flex:1">⬇ Export</button>
+        <button class="btn btn-ghost btn-sm" onclick="triggerImport(&#39;herb&#39;)" style="flex:1">⬆ Import CSV</button>
+        <button class="btn btn-ghost btn-sm" onclick="showArchived(&#39;herb&#39;)" style="flex:1">📁 Archived</button>
+      </div>
+      <input type="file" id="import-herb" accept=".csv" style="display:none" onchange="importCSV(event,&#39;herb&#39;)">
+    </div>
+  </div>
+</div>
+
+<!-- SCOUT MODAL -->
+<div class="modal-overlay" id="modal-scout">
+  <div class="modal">
+    <div class="modal-title">🌿 Flag Weed Problem</div>
+    <div class="form-row"><div class="form-group"><label>Site Name</label><input id="scout-name" type="text" placeholder="e.g. East bed near Trinkle"></div></div>
+    <div class="form-row">
+      <div class="form-group"><label>Weed Species</label><input id="scout-species" type="text" placeholder="e.g. Ailanthus, Bindweed"></div>
+      <div class="form-group" style="max-width:120px"><label>Density</label><select id="scout-density"><option>Light</option><option>Moderate</option><option>Heavy</option></select></div>
+    </div>
+    <div class="form-row"><div class="form-group"><label>Recommended Treatment</label><input id="scout-treatment" type="text" placeholder="e.g. Basal bark triclopyr"></div></div>
+    <div class="form-row"><div class="form-group"><label>Notes</label><textarea id="scout-notes" placeholder="Additional observations…"></textarea></div></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" style="flex:2" onclick="saveScoutSite()">Save Site</button>
+      <button class="btn btn-ghost" style="flex:1" onclick="closeModal(&#39;modal-scout&#39;)">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- HERB MODAL -->
+<div class="modal-overlay" id="modal-herb">
+  <div class="modal">
+    <div class="modal-title">🧪 Log Herbicide Application</div>
+    <div class="form-row"><div class="form-group"><label>Site Name</label><input id="herb-name" type="text" placeholder="e.g. East bed near Trinkle"></div></div>
+    <div class="form-row">
+      <div class="form-group"><label>Product Name</label><input id="herb-product" type="text" placeholder="e.g. Garlon 4 Ultra"></div>
+      <div class="form-group" style="max-width:130px"><label>EPA Reg. #</label><input id="herb-epa" type="text" placeholder="e.g. 62719-37"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>App. Method</label><select id="herb-method"><option>Basal bark</option><option>Foliar spray</option><option>Cut stump</option><option>Soil drench</option><option>Injection</option><option>Other</option></select></div>
+      <div class="form-group" style="max-width:120px"><label>Volume Applied</label><input id="herb-volume" type="text" placeholder="e.g. 0.5 gal"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Mix Rate / Conc.</label><input id="herb-rate" type="text" placeholder="e.g. 20% v/v in basal oil"></div>
+      <div class="form-group"><label>Target Species</label><input id="herb-target" type="text" placeholder="e.g. Ailanthus altissima"></div>
+    </div>
+    <div class="form-row"><div class="form-group"><label>Applicator</label><input id="herb-applicator" type="text" placeholder="Name / License #"></div></div>
+    <div class="form-row"><div class="form-group"><label>Notes</label><textarea id="herb-notes" placeholder="Weather, conditions, observations…"></textarea></div></div>
+    <div class="btn-row">
+      <button class="btn btn-warn" style="flex:2" onclick="saveHerbApp()">Log Application</button>
+      <button class="btn btn-ghost" style="flex:1" onclick="closeModal(&#39;modal-herb&#39;)">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="modal-overlay" id="modal-detail">
+  <div class="modal">
+    <div class="modal-title" id="detail-title">Detail</div>
+    <div id="detail-body"></div>
+    <div class="btn-row" id="detail-actions" style="margin-top:14px;"></div>
+  </div>
+</div>
+
+<!-- ARCHIVED MODAL -->
+<div class="modal-overlay" id="modal-archived">
+  <div class="modal">
+    <div class="modal-title" id="archived-title">Archived</div>
+    <div id="archived-body"></div>
+    <div class="btn-row" style="margin-top:12px;"><button class="btn btn-ghost" style="flex:1" onclick="closeModal(&#39;modal-archived&#39;)">Close</button></div>
+  </div>
+</div>
+
+<script>
+// ── STATE ──────────────────────────────────────────────────
+const state = { scout: [], herb: [] };
+let tempLatLng = null;
+let scoutMap, herbMap;
+let scoutMarkers = {}, herbMarkers = {};
+let scoutTopoOn = false, herbTopoOn = false;
+let scoutStreet, scoutTopo, herbStreet, herbTopo;
+
+// ── TILES ──────────────────────────────────────────────────
+const MBKEY = 'pk.eyJ1IjoiamtjYXJlYXR0aSIsImEiOiJjbW5lcGxtZ2kwMXk4MnBuYXFvb2s0OHZ5In0.bLIT6a61viYOJMHzXoNsHA';
+const OSM   = `https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/{z}/{x}/{y}?access_token=${MBKEY}`;
+const OSM_O = {
+  attribution: '© <a href="https://www.mapbox.com/">Mapbox</a> © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+  tileSize: 512, zoomOffset: -1, maxZoom: 22
+};
+const TOPO  = `https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/{z}/{x}/{y}?access_token=${MBKEY}`;
+const TOPO_O= {
+  attribution: '© <a href="https://www.mapbox.com/">Mapbox</a> © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+  tileSize: 512, zoomOffset: -1, maxZoom: 22
+};
+
+// ── INIT ───────────────────────────────────────────────────
+document.getElementById('header-date').textContent =
+  new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+
+function initMaps() {
+  const C = [38.3012, -77.4756], Z = 17;
+
+  scoutMap   = L.map('scout-map',{zoomControl:true,tap:true}).setView(C,Z);
+  scoutStreet= L.tileLayer(OSM,  OSM_O).addTo(scoutMap);
+  scoutTopo  = L.tileLayer(TOPO, TOPO_O);
+  scoutMap.on('click', e=>{ tempLatLng=e.latlng; clearScoutForm(); openModal('modal-scout'); });
+
+  herbMap    = L.map('herb-map', {zoomControl:true,tap:true}).setView(C,Z);
+  herbStreet = L.tileLayer(OSM,  OSM_O).addTo(herbMap);
+  herbTopo   = L.tileLayer(TOPO, TOPO_O);
+  herbMap.on('click',  e=>{ tempLatLng=e.latlng; clearHerbForm();  openModal('modal-herb');  });
+
+  // iOS Safari grey-tile fix: set explicit pixel height on the wrap divs, then invalidate
+  fixMapSizes();
+  window.addEventListener('resize', fixMapSizes);
+}
+
+function fixMapSizes() {
+  // Force the map containers to have a real pixel height (iOS flex bug workaround)
+  ['scout','herb'].forEach(t => {
+    const wrap = document.getElementById(t+'-wrap');
+    if (!wrap) return;
+    // Already positioned absolutely by CSS; just trigger a reflow
+    const map  = t==='scout' ? scoutMap : herbMap;
+    if (map) {
+      setTimeout(()=>{ map.invalidateSize({pan:false}); }, 100);
+    }
+  });
+}
+
+// ── LAYER TOGGLE ──────────────────────────────────────────
+function toggleLayer(tab) {
+  if (tab==='scout') {
+    scoutTopoOn = !scoutTopoOn;
+    if (scoutTopoOn) { scoutMap.removeLayer(scoutStreet); scoutTopo.addTo(scoutMap); document.getElementById('scout-layer-btn').textContent='🗺 Street'; }
+    else             { scoutMap.removeLayer(scoutTopo);   scoutStreet.addTo(scoutMap); document.getElementById('scout-layer-btn').textContent='🛰 Satellite'; }
+  } else {
+    herbTopoOn = !herbTopoOn;
+    if (herbTopoOn) { herbMap.removeLayer(herbStreet); herbTopo.addTo(herbMap); document.getElementById('herb-layer-btn').textContent='🗺 Street'; }
+    else            { herbMap.removeLayer(herbTopo);   herbStreet.addTo(herbMap); document.getElementById('herb-layer-btn').textContent='🛰 Satellite'; }
+  }
+}
+
+// ── TABS ──────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  document.getElementById('panel-'+tab).classList.add('active');
+  setTimeout(()=>{ (tab==='scout'?scoutMap:herbMap).invalidateSize({pan:false}); }, 80);
+}
+
+// ── DRAWERS / MODALS ──────────────────────────────────────
+function toggleDrawer(id){ document.getElementById(id).classList.toggle('open'); }
+function openModal(id)   { document.getElementById(id).classList.add('open'); }
+function closeModal(id)  { document.getElementById(id).classList.remove('open'); }
+
+// ── AGE HELPERS ───────────────────────────────────────────
+function ageClass(d) { const x=(Date.now()-new Date(d))/86400000; return x<7?'fresh':x<30?'aging':'old'; }
+function ageLabel(d) { const x=Math.floor((Date.now()-new Date(d))/86400000); return x===0?'Today':x===1?'1 day ago':x+' days ago'; }
+function chipAge(d)  {
+  const m={fresh:['chip-red','<7 d'],aging:['chip-yellow','7–30 d'],old:['chip-gray','>30 d']};
+  const[c,l]=m[ageClass(d)]; return `<span class="chip ${c}">${l}</span>`;
+}
+
+// ── MARKER ICONS ──────────────────────────────────────────
+function weedIcon(ageC, archived) {
+  const cols={fresh:'#c0392b',aging:'#c8960a',old:'#7a7a7a'};
+  const col = archived?'#9b9b9b':(cols[ageC]||'#7a7a7a');
+  const op  = archived?'0.5':'1';
+  return L.divIcon({className:'',iconSize:[24,24],iconAnchor:[12,24],popupAnchor:[0,-26],
+    html:`<div style="width:24px;height:24px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);
+      background:${col};border:2.5px solid rgba(255,255,255,.75);
+      box-shadow:0 2px 6px rgba(0,0,0,.4);opacity:${op}"></div>`});
+}
+
+function herbIcon(dimmed) {
+  const col=dimmed?'#9b9b9b':'#5a9e5a';
+  const op =dimmed?'0.55':'1';
+  return L.divIcon({className:'',iconSize:[22,22],iconAnchor:[11,11],popupAnchor:[0,-14],
+    html:`<div style="width:22px;height:22px;border-radius:4px;transform:rotate(45deg);
+      background:${col};border:2.5px solid rgba(255,255,255,.75);
+      box-shadow:0 2px 6px rgba(0,0,0,.4);opacity:${op}"></div>`});
+}
+
+// ── SAVE – SCOUT ──────────────────────────────────────────
+function saveScoutSite() {
+  if (!tempLatLng) { alert('No location captured.'); return; }
+  const s = {
+    id:Date.now(),
+    name:      v('scout-name')      || 'Unnamed site',
+    species:   v('scout-species'),
+    density:   v('scout-density'),
+    treatment: v('scout-treatment'),
+    notes:     v('scout-notes'),
+    lat:tempLatLng.lat, lng:tempLatLng.lng,
+    date:new Date().toISOString(), archived:false
+  };
+  state.scout.push(s); persist();
+  addScoutMarker(s); renderScoutList(); updateCounts(); closeModal('modal-scout');
+}
+
+function clearScoutForm() {
+  ['scout-name','scout-species','scout-treatment','scout-notes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('scout-density').value='Light';
+}
+
+function addScoutMarker(s) {
+  const m=L.marker([s.lat,s.lng],{icon:weedIcon(ageClass(s.date),s.archived)});
+  m.on('click',()=>showScoutDetail(s.id)); m.addTo(scoutMap); scoutMarkers[s.id]=m;
+}
+function refreshScoutIcon(s){ const m=scoutMarkers[s.id]; if(m) m.setIcon(weedIcon(ageClass(s.date),s.archived)); }
+
+// ── SAVE – HERB ───────────────────────────────────────────
+function saveHerbApp() {
+  if (!tempLatLng) { alert('No location captured.'); return; }
+  const a = {
+    id:Date.now(),
+    name:       v('herb-name')       || 'Unnamed site',
+    product:    v('herb-product'),
+    epa:        v('herb-epa'),
+    method:     v('herb-method'),
+    volume:     v('herb-volume'),
+    rate:       v('herb-rate'),
+    target:     v('herb-target'),
+    applicator: v('herb-applicator'),
+    notes:      v('herb-notes'),
+    lat:tempLatLng.lat, lng:tempLatLng.lng,
+    date:new Date().toISOString(), complianceLogged:false, archived:false
+  };
+  state.herb.push(a); persist();
+  addHerbMarker(a); renderHerbList(); updateCounts(); closeModal('modal-herb');
+}
+
+function clearHerbForm() {
+  ['herb-name','herb-product','herb-epa','herb-volume','herb-rate','herb-target','herb-applicator','herb-notes']
+    .forEach(id=>document.getElementById(id).value='');
+}
+
+function addHerbMarker(a) {
+  const m=L.marker([a.lat,a.lng],{icon:herbIcon(a.complianceLogged||a.archived)});
+  m.on('click',()=>showHerbDetail(a.id)); m.addTo(herbMap); herbMarkers[a.id]=m;
+}
+function refreshHerbIcon(a){ const m=herbMarkers[a.id]; if(m) m.setIcon(herbIcon(a.complianceLogged||a.archived)); }
+
+// ── DETAIL – SCOUT ────────────────────────────────────────
+function showScoutDetail(id) {
+  const s=state.scout.find(x=>x.id===id); if(!s) return;
+  document.getElementById('detail-title').textContent='🌿 '+s.name;
+  document.getElementById('detail-body').innerHTML=`
+    <div style="margin-bottom:10px">${chipAge(s.date)}${s.archived?'<span class="chip chip-archived" style="margin-left:5px">Archived</span>':''}</div>
+    <table class="detail-table">
+      ${tr('Flagged',fmt(s.date)+' ('+ageLabel(s.date)+')')}
+      ${tr('Species',s.species||'—')}${tr('Density',s.density)}
+      ${tr('Treatment',s.treatment||'—')}
+      ${tr('Coords',s.lat.toFixed(5)+', '+s.lng.toFixed(5))}
+      ${s.notes?tr('Notes',s.notes):''}
+    </table>`;
+  const acts=document.getElementById('detail-actions'); acts.innerHTML='';
+  if (!s.archived) {
+    mkbtn(acts,'📁 Archive','btn-warn btn-sm',()=>{ s.archived=true; persist(); refreshScoutIcon(s); renderScoutList(); updateCounts(); closeModal('modal-detail'); });
+    mkbtn(acts,'🗑 Delete', 'btn-danger btn-sm',()=>delScout(id));
+  } else {
+    mkbtn(acts,'↩ Restore','btn-ghost btn-sm',()=>{ s.archived=false; persist(); refreshScoutIcon(s); renderScoutList(); updateCounts(); closeModal('modal-detail'); closeModal('modal-archived'); });
+  }
+  mkbtn(acts,'Close','btn-ghost btn-sm',()=>closeModal('modal-detail'),true);
+  openModal('modal-detail');
+}
+
+function delScout(id) {
+  if (!confirm('Delete permanently?')) return;
+  state.scout=state.scout.filter(s=>s.id!==id);
+  if (scoutMarkers[id]){ scoutMap.removeLayer(scoutMarkers[id]); delete scoutMarkers[id]; }
+  persist(); renderScoutList(); updateCounts(); closeModal('modal-detail');
+}
+
+// ── DETAIL – HERB ─────────────────────────────────────────
+function showHerbDetail(id) {
+  const a=state.herb.find(x=>x.id===id); if(!a) return;
+  document.getElementById('detail-title').textContent='🧪 '+a.name;
+  document.getElementById('detail-body').innerHTML=`
+    <div style="margin-bottom:10px">
+      <span class="chip ${a.complianceLogged?'chip-archived':'chip-green'}">${a.complianceLogged?'Compliance Filed':'Pending Compliance'}</span>
+      ${a.archived?'<span class="chip chip-archived" style="margin-left:5px">Archived</span>':''}
+    </div>
+    <table class="detail-table">
+      ${tr('Date',fmt(a.date))}${tr('Product',a.product||'—')}${tr('EPA Reg #',a.epa||'—')}
+      ${tr('Method',a.method)}${tr('Volume',a.volume||'—')}${tr('Mix Rate',a.rate||'—')}
+      ${tr('Target',a.target||'—')}${tr('Applicator',a.applicator||'—')}
+      ${tr('Coords',a.lat.toFixed(5)+', '+a.lng.toFixed(5))}
+      ${a.notes?tr('Notes',a.notes):''}
+    </table>`;
+  const acts=document.getElementById('detail-actions'); acts.innerHTML='';
+  if (!a.archived) {
+    if (!a.complianceLogged)
+      mkbtn(acts,'✅ Compliance Filed','btn-primary btn-sm',()=>{ a.complianceLogged=true; persist(); refreshHerbIcon(a); renderHerbList(); updateCounts(); closeModal('modal-detail'); });
+    mkbtn(acts,'📁 Archive','btn-warn btn-sm',()=>{ a.archived=true; persist(); refreshHerbIcon(a); renderHerbList(); updateCounts(); closeModal('modal-detail'); });
+    mkbtn(acts,'🗑 Delete', 'btn-danger btn-sm',()=>delHerb(id));
+  } else {
+    mkbtn(acts,'↩ Restore','btn-ghost btn-sm',()=>{ a.archived=false; persist(); refreshHerbIcon(a); renderHerbList(); updateCounts(); closeModal('modal-detail'); closeModal('modal-archived'); });
+  }
+  mkbtn(acts,'Close','btn-ghost btn-sm',()=>closeModal('modal-detail'),true);
+  openModal('modal-detail');
+}
+
+function delHerb(id) {
+  if (!confirm('Delete permanently?')) return;
+  state.herb=state.herb.filter(a=>a.id!==id);
+  if (herbMarkers[id]){ herbMap.removeLayer(herbMarkers[id]); delete herbMarkers[id]; }
+  persist(); renderHerbList(); updateCounts(); closeModal('modal-detail');
+}
+
+// ── RENDER LISTS ──────────────────────────────────────────
+function renderScoutList() {
+  const el=document.getElementById('scout-list');
+  const items=state.scout.filter(s=>!s.archived).sort((a,b)=>new Date(b.date)-new Date(a.date));
+  if (!items.length){ el.innerHTML='<div class="empty-state">No active sites</div>'; return; }
+  el.innerHTML=items.map(s=>`
+    <div class="site-item ${ageClass(s.date)}" onclick="showScoutDetail(${s.id})">
+      <div class="site-info">
+        <div class="site-name">${s.name}</div>
+        <div class="site-meta">${s.species||'Species unknown'} · ${s.density} · ${ageLabel(s.date)}</div>
+      </div>${chipAge(s.date)}
+    </div>`).join('');
+}
+
+function renderHerbList() {
+  const el=document.getElementById('herb-list');
+  const items=state.herb.filter(a=>!a.archived).sort((a,b)=>new Date(b.date)-new Date(a.date));
+  if (!items.length){ el.innerHTML='<div class="empty-state">No active application records</div>'; return; }
+  el.innerHTML=items.map(a=>`
+    <div class="app-log-item ${a.complianceLogged?'compliance-logged':''}" onclick="showHerbDetail(${a.id})">
+      <div class="log-info">
+        <div class="log-name">${a.name}</div>
+        <div class="log-meta">${a.product||'Unspecified'} · ${a.method} · ${fmt(a.date)}</div>
+      </div>
+      <span class="chip ${a.complianceLogged?'chip-archived':'chip-green'}">${a.complianceLogged?'Filed':'Pending'}</span>
+    </div>`).join('');
+}
+
+// ── ARCHIVED ──────────────────────────────────────────────
+function showArchived(type) {
+  document.getElementById('archived-title').textContent = type==='scout'?'📁 Archived Weed Sites':'📁 Archived Applications';
+  const items=(type==='scout'?state.scout:state.herb).filter(x=>x.archived);
+  const fn=type==='scout'?'showScoutDetail':'showHerbDetail';
+  document.getElementById('archived-body').innerHTML = !items.length
+    ? '<div class="empty-state">Nothing archived</div>'
+    : items.map(x=>`
+      <div class="site-item archived" onclick="closeModal('modal-archived');${fn}(${x.id})">
+        <div class="site-info"><div class="site-name">${x.name}</div><div class="site-meta">${fmt(x.date)}</div></div>
+        <span class="chip chip-archived">Archived</span>
+      </div>`).join('');
+  openModal('modal-archived');
+}
+
+// ── COUNTS ────────────────────────────────────────────────
+function updateCounts() {
+  document.getElementById('scout-count').textContent=state.scout.filter(s=>!s.archived).length;
+  document.getElementById('herb-count').textContent =state.herb.filter(a=>!a.archived&&!a.complianceLogged).length;
+}
+
+// ── GPS ───────────────────────────────────────────────────
+function locateMe(tab) {
+  if (!navigator.geolocation){ alert('Geolocation not available.'); return; }
+  navigator.geolocation.getCurrentPosition(
+    p=>{ const ll=[p.coords.latitude,p.coords.longitude]; (tab==='scout'?scoutMap:herbMap).setView(ll,19); },
+    ()=>alert('Could not get location. Check permissions.')
+  );
+}
+
+// ── CSV EXPORT ────────────────────────────────────────────
+function exportCSV(type) {
+  let h,rows;
+  if (type==='scout') {
+    h=['ID','Name','Species','Density','Treatment','Notes','Lat','Lng','Date','Archived'];
+    rows=state.scout.map(s=>[s.id,s.name,s.species,s.density,s.treatment,s.notes,s.lat,s.lng,s.date,s.archived]);
+  } else {
+    h=['ID','Name','Product','EPA_Reg','Method','Volume','Rate','Target','Applicator','Notes','Lat','Lng','Date','ComplianceLogged','Archived'];
+    rows=state.herb.map(a=>[a.id,a.name,a.product,a.epa,a.method,a.volume,a.rate,a.target,a.applicator,a.notes,a.lat,a.lng,a.date,a.complianceLogged,a.archived]);
+  }
+  const csv=[h,...rows].map(r=>r.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download=`umw_${type}_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+
+// ── HELPERS ───────────────────────────────────────────────
+function v(id)    { return document.getElementById(id).value.trim(); }
+function fmt(iso) { return new Date(iso).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); }
+function tr(label,val){ return `<tr><td>${label}</td><td>${val}</td></tr>`; }
+function mkbtn(parent,text,cls,handler,stretch) {
+  const b=document.createElement('button');
+  b.className='btn '+cls; if(stretch) b.style.flex='1';
+  b.textContent=text; b.onclick=handler; parent.appendChild(b);
+}
+
+// ── PERSIST ───────────────────────────────────────────────
+function persist() {
+  try { localStorage.setItem('umw_scout',JSON.stringify(state.scout)); localStorage.setItem('umw_herb',JSON.stringify(state.herb)); } catch(e){}
+}
+function loadData() {
+  try {
+    const s=localStorage.getItem('umw_scout'), h=localStorage.getItem('umw_herb');
+    if(s) state.scout=JSON.parse(s);
+    if(h) state.herb =JSON.parse(h);
+  } catch(e){}
+}
+
+// ── CSV IMPORT ────────────────────────────────────────────
+function triggerImport(type) {
+  document.getElementById('import-'+type).value = ''; // reset so same file can be re-imported
+  document.getElementById('import-'+type).click();
+}
+
+function importCSV(event, type) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const text = e.target.result;
+    const rows = parseCSV(text);
+    if (rows.length < 2) { alert('CSV appears empty or unreadable.'); return; }
+
+    const headers = rows[0].map(h => h.trim().toLowerCase());
+    const dataRows = rows.slice(1).filter(r => r.some(c => c.trim() !== ''));
+
+    let added = 0, skipped = 0;
+
+    if (type === 'scout') {
+      // Expected headers: id,name,species,density,treatment,notes,lat,lng,date,archived
+      const idx = {
+        name:      headers.indexOf('name'),
+        species:   headers.indexOf('species'),
+        density:   headers.indexOf('density'),
+        treatment: headers.indexOf('treatment'),
+        notes:     headers.indexOf('notes'),
+        lat:       headers.indexOf('lat'),
+        lng:       headers.indexOf('lng'),
+        date:      headers.indexOf('date'),
+        archived:  headers.indexOf('archived')
+      };
+
+      if (idx.lat === -1 || idx.lng === -1) {
+        alert('This doesn\'t look like a scouting CSV — missing Lat/Lng columns.'); return;
+      }
+
+      dataRows.forEach(row => {
+        const lat  = parseFloat(row[idx.lat]);
+        const lng  = parseFloat(row[idx.lng]);
+        const date = row[idx.date] ? row[idx.date].trim() : new Date().toISOString();
+        if (isNaN(lat) || isNaN(lng)) { skipped++; return; }
+
+        // Skip exact duplicates (same lat/lng/date)
+        const isDupe = state.scout.some(s =>
+          Math.abs(s.lat - lat) < 0.00001 &&
+          Math.abs(s.lng - lng) < 0.00001 &&
+          s.date === date
+        );
+        if (isDupe) { skipped++; return; }
+
+        const site = {
+          id:        Date.now() + Math.random(), // unique id
+          name:      idx.name      >= 0 ? row[idx.name].trim()      : 'Imported site',
+          species:   idx.species   >= 0 ? row[idx.species].trim()   : '',
+          density:   idx.density   >= 0 ? row[idx.density].trim()   : 'Unknown',
+          treatment: idx.treatment >= 0 ? row[idx.treatment].trim() : '',
+          notes:     idx.notes     >= 0 ? row[idx.notes].trim()     : '',
+          lat, lng, date,
+          archived:  idx.archived  >= 0 ? row[idx.archived].trim().toLowerCase() === 'true' : false
+        };
+        state.scout.push(site);
+        addScoutMarker(site);
+        added++;
+      });
+
+      persist(); renderScoutList(); updateCounts();
+
+    } else {
+      // Expected: id,name,product,epa_reg,method,volume,rate,target,applicator,notes,lat,lng,date,compliancelogged,archived
+      const idx = {
+        name:       headers.indexOf('name'),
+        product:    headers.indexOf('product'),
+        epa:        headers.indexOf('epa_reg'),
+        method:     headers.indexOf('method'),
+        volume:     headers.indexOf('volume'),
+        rate:       headers.indexOf('rate'),
+        target:     headers.indexOf('target'),
+        applicator: headers.indexOf('applicator'),
+        notes:      headers.indexOf('notes'),
+        lat:        headers.indexOf('lat'),
+        lng:        headers.indexOf('lng'),
+        date:       headers.indexOf('date'),
+        compliance: headers.indexOf('compliancelogged'),
+        archived:   headers.indexOf('archived')
+      };
+
+      if (idx.lat === -1 || idx.lng === -1) {
+        alert('This doesn\'t look like an applications CSV — missing Lat/Lng columns.'); return;
+      }
+
+      dataRows.forEach(row => {
+        const lat  = parseFloat(row[idx.lat]);
+        const lng  = parseFloat(row[idx.lng]);
+        const date = row[idx.date] ? row[idx.date].trim() : new Date().toISOString();
+        if (isNaN(lat) || isNaN(lng)) { skipped++; return; }
+
+        const isDupe = state.herb.some(a =>
+          Math.abs(a.lat - lat) < 0.00001 &&
+          Math.abs(a.lng - lng) < 0.00001 &&
+          a.date === date
+        );
+        if (isDupe) { skipped++; return; }
+
+        const app = {
+          id:               Date.now() + Math.random(),
+          name:             idx.name       >= 0 ? row[idx.name].trim()       : 'Imported site',
+          product:          idx.product    >= 0 ? row[idx.product].trim()    : '',
+          epa:              idx.epa        >= 0 ? row[idx.epa].trim()        : '',
+          method:           idx.method     >= 0 ? row[idx.method].trim()     : '',
+          volume:           idx.volume     >= 0 ? row[idx.volume].trim()     : '',
+          rate:             idx.rate       >= 0 ? row[idx.rate].trim()       : '',
+          target:           idx.target     >= 0 ? row[idx.target].trim()     : '',
+          applicator:       idx.applicator >= 0 ? row[idx.applicator].trim() : '',
+          notes:            idx.notes      >= 0 ? row[idx.notes].trim()      : '',
+          lat, lng, date,
+          complianceLogged: idx.compliance >= 0 ? row[idx.compliance].trim().toLowerCase() === 'true' : false,
+          archived:         idx.archived   >= 0 ? row[idx.archived].trim().toLowerCase() === 'true'   : false
+        };
+        state.herb.push(app);
+        addHerbMarker(app);
+        added++;
+      });
+
+      persist(); renderHerbList(); updateCounts();
+    }
+
+    const msg = added > 0
+      ? `✅ Imported ${added} record${added!==1?'s':''}.${skipped>0?' '+skipped+' duplicate(s) skipped.':''}`
+      : `⚠️ No new records added — ${skipped} duplicate(s) already in your data.`;
+    alert(msg);
+  };
+  reader.readAsText(file);
+}
+
+// Minimal CSV parser — handles quoted fields with commas and embedded newlines
+function parseCSV(text) {
+  const rows = [];
+  let row = [], field = '', inQuote = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i], next = text[i+1];
+    if (inQuote) {
+      if (c === '"' && next === '"') { field += '"'; i++; }
+      else if (c === '"') { inQuote = false; }
+      else { field += c; }
+    } else {
+      if (c === '"') { inQuote = true; }
+      else if (c === ',') { row.push(field); field = ''; }
+      else if (c === '\n' || (c === '\r' && next === '\n')) {
+        row.push(field); field = '';
+        if (row.some(f => f !== '')) rows.push(row);
+        row = [];
+        if (c === '\r') i++;
+      } else { field += c; }
+    }
+  }
+  if (field || row.length) { row.push(field); if (row.some(f=>f!=='')) rows.push(row); }
+  return rows;
+}
+
+// ── BOOT ──────────────────────────────────────────────────
+loadData();
+initMaps();
+state.scout.forEach(s=>addScoutMarker(s));
+state.herb.forEach(a=>addHerbMarker(a));
+renderScoutList();
+renderHerbList();
+updateCounts();
+</script>
+
+
+</body></html>
