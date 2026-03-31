@@ -1,3 +1,7 @@
+bash
+
+cat /home/claude/index.html
+Output
 
 <!DOCTYPE html>
 <html lang="en">
@@ -12,7 +16,7 @@
 <script src="https://accounts.google.com/gsi/client"></script>
 <script src="https://apis.google.com/js/api.js"></script>
 <style>
-  :root{--green-dark:#1a2e1a;--green-mid:#2d4a2d;--green-light:#3d6b3d;--green-accent:#5a9e5a;--tan:#c8b89a;--cream:#f4f0e8;--red:#c0392b;--orange:#e07b28;--yellow:#c8960a;--gray:#7a7a7a;--archived:#9b9b9b;--white:#ffffff;}
+  :root{--green-dark:#1a2e1a;--green-mid:#2d4a2d;--green-light:#3d6b3d;--green-accent:#5a9e5a;--tan:#c8b89a;--cream:#f4f0e8;--red:#c0392b;--orange:#e07b28;--yellow:#c8960a;--gray:#7a7a7a;--archived:#9b9b9b;--blue:#2980b9;--purple:#8e44ad;}
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
   html{height:100%;}
   body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:Georgia,serif;background:var(--green-dark);color:var(--cream);display:flex;flex-direction:column;}
@@ -24,12 +28,15 @@
   .header-badge{background:var(--green-mid);border:1px solid var(--green-accent);border-radius:4px;padding:4px 8px;font-size:10px;color:var(--tan);letter-spacing:.06em;}
   .sync-btn{background:var(--green-mid);border:1px solid var(--green-accent);border-radius:4px;padding:4px 10px;font-size:10px;color:var(--tan);letter-spacing:.06em;cursor:pointer;text-transform:uppercase;font-family:Georgia,serif;transition:background .15s;}
   .sync-btn:hover{background:var(--green-light);}
-  .sync-btn.signed-in{border-color:var(--green-accent);color:var(--green-accent);}
+  .sync-btn.signed-in{color:var(--green-accent);}
   .sync-btn.syncing{color:var(--yellow);border-color:var(--yellow);}
   .sync-btn.error{color:var(--red);border-color:var(--red);}
   .tabs{display:flex;gap:2px;}
-  .tab{flex:1;padding:8px 4px;text-align:center;font-size:11px;letter-spacing:.07em;text-transform:uppercase;cursor:pointer;border-radius:4px 4px 0 0;color:var(--tan);background:var(--green-mid);border:1px solid transparent;border-bottom:none;user-select:none;}
+  .tab{flex:1;padding:8px 4px;text-align:center;font-size:10px;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;border-radius:4px 4px 0 0;color:var(--tan);background:var(--green-mid);border:1px solid transparent;border-bottom:none;user-select:none;}
   .tab.active{background:var(--cream);color:var(--green-dark);border-color:var(--tan);font-weight:bold;}
+  .tab-count{display:inline-block;background:var(--red);color:#fff;border-radius:10px;font-size:9px;padding:1px 5px;margin-left:3px;vertical-align:middle;font-weight:bold;min-width:16px;text-align:center;}
+  .tab.active .tab-count{background:var(--green-light);}
+  .tab-count.urgent{background:var(--orange);}
   .panel{display:none;flex:1;flex-direction:column;overflow:hidden;background:var(--cream);min-height:0;}
   .panel.active{display:flex;}
   .map-wrap{position:relative;flex:1;min-height:0;overflow:hidden;}
@@ -37,30 +44,43 @@
   .map-tap-hint{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);background:rgba(26,46,26,.88);color:var(--tan);padding:6px 14px;border-radius:20px;font-size:11px;letter-spacing:.06em;pointer-events:none;z-index:500;white-space:nowrap;border:1px solid var(--green-light);}
   .locate-btn{position:absolute;top:10px;right:10px;z-index:500;background:var(--green-dark);border:1.5px solid var(--green-light);color:var(--tan);border-radius:6px;padding:8px 11px;font-size:16px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.3);}
   .layer-btn{position:absolute;top:10px;left:10px;z-index:500;background:var(--green-dark);border:1.5px solid var(--green-light);color:var(--tan);border-radius:6px;padding:6px 10px;font-size:10px;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.3);}
-  .legend{display:flex;gap:10px;flex-wrap:wrap;padding:6px 14px;background:var(--green-dark);border-top:1px solid var(--green-mid);flex-shrink:0;}
-  .legend-item{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--tan);}
-  .legend-dot{width:10px;height:10px;border-radius:50%;border:1.5px solid rgba(255,255,255,.3);flex-shrink:0;}
+  .legend{display:flex;gap:8px;flex-wrap:wrap;padding:5px 14px;background:var(--green-dark);border-top:1px solid var(--green-mid);flex-shrink:0;}
+  .legend-item{display:flex;align-items:center;gap:4px;font-size:9px;color:var(--tan);}
+  .legend-dot{width:9px;height:9px;border-radius:50%;border:1.5px solid rgba(255,255,255,.3);flex-shrink:0;}
   .drawer{background:var(--green-dark);border-top:2px solid var(--green-light);flex-shrink:0;z-index:10;}
   .drawer-handle{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;cursor:pointer;user-select:none;}
   .drawer-title{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--tan);}
   .drawer-toggle{font-size:14px;color:var(--green-accent);transition:transform .2s;display:inline-block;}
   .drawer.open .drawer-toggle{transform:rotate(180deg);}
-  .drawer-body{display:none;padding:0 14px 12px;max-height:250px;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+  .drawer-body{display:none;padding:0 14px 12px;max-height:240px;overflow-y:auto;-webkit-overflow-scrolling:touch;}
   .drawer.open .drawer-body{display:block;}
   .site-list{margin-top:4px;}
   .site-item{background:var(--green-mid);border-radius:5px;padding:9px 11px;margin-bottom:7px;display:flex;align-items:center;gap:10px;border-left:4px solid var(--gray);cursor:pointer;}
   .site-item.fresh{border-left-color:var(--red);}
   .site-item.aging{border-left-color:var(--yellow);}
   .site-item.old{border-left-color:var(--gray);}
+  .site-item.needs-retreat{border-left-color:var(--orange);}
   .site-item.archived{opacity:.5;}
   .site-info{flex:1;min-width:0;}
   .site-name{font-size:13px;color:var(--cream);font-weight:bold;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .site-meta{font-size:10px;color:var(--tan);margin-top:2px;}
   .app-log-item{background:var(--green-mid);border-radius:5px;padding:9px 11px;margin-bottom:7px;display:flex;align-items:center;gap:10px;border-left:4px solid var(--green-accent);cursor:pointer;}
   .app-log-item.compliance-logged{border-left-color:var(--archived);opacity:.55;}
+  .app-log-item.needs-retreat{border-left-color:var(--orange);}
   .log-info{flex:1;min-width:0;}
   .log-name{font-size:13px;color:var(--cream);font-weight:bold;}
   .log-meta{font-size:10px;color:var(--tan);margin-top:2px;}
+  /* FOLLOWUP PANEL */
+  .followup-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px 14px;}
+  .followup-section-title{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--tan);margin:12px 0 6px;border-bottom:1px solid var(--green-mid);padding-bottom:4px;}
+  .followup-item{background:var(--green-mid);border-radius:6px;padding:11px 13px;margin-bottom:8px;border-left:4px solid var(--orange);cursor:pointer;}
+  .followup-item.overdue{border-left-color:var(--red);}
+  .followup-item.needs-retreat{border-left-color:var(--purple);}
+  .followup-item.checked{border-left-color:var(--green-accent);opacity:.6;}
+  .followup-name{font-size:13px;color:var(--cream);font-weight:bold;}
+  .followup-meta{font-size:10px;color:var(--tan);margin-top:3px;}
+  .followup-actions{display:flex;gap:6px;margin-top:8px;}
+  .empty-followup{text-align:center;padding:40px 20px;color:var(--green-accent);font-size:12px;letter-spacing:.06em;text-transform:uppercase;}
   .empty-state{text-align:center;padding:20px;color:var(--green-accent);font-size:12px;letter-spacing:.06em;text-transform:uppercase;}
   .csv-row{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}
   .chip{display:inline-block;border-radius:3px;padding:2px 6px;font-size:9px;letter-spacing:.06em;text-transform:uppercase;font-weight:bold;white-space:nowrap;flex-shrink:0;}
@@ -68,6 +88,8 @@
   .chip-yellow{background:var(--yellow);color:#fff;}
   .chip-gray{background:var(--gray);color:#fff;}
   .chip-green{background:var(--green-accent);color:#fff;}
+  .chip-orange{background:var(--orange);color:#fff;}
+  .chip-purple{background:var(--purple);color:#fff;}
   .chip-archived{background:var(--archived);color:#fff;}
   .form-row{display:flex;gap:8px;margin-bottom:8px;}
   .form-group{flex:1;display:flex;flex-direction:column;gap:3px;}
@@ -80,6 +102,7 @@
   .btn-primary{background:var(--green-accent);color:#fff;}
   .btn-warn{background:var(--orange);color:#fff;}
   .btn-danger{background:var(--red);color:#fff;}
+  .btn-purple{background:var(--purple);color:#fff;}
   .btn-ghost{background:transparent;border:1px solid var(--green-accent);color:var(--green-accent);}
   .btn-sm{padding:6px 10px;font-size:11px;}
   .btn-row{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;}
@@ -87,8 +110,6 @@
   .modal-overlay.open{display:flex;}
   .modal{background:var(--green-dark);border-top:2px solid var(--green-light);border-radius:16px 16px 0 0;width:100%;max-width:640px;padding:20px 18px;padding-bottom:max(24px,env(safe-area-inset-bottom));max-height:92dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;}
   .modal-title{font-size:14px;letter-spacing:.1em;text-transform:uppercase;color:var(--tan);margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--green-mid);}
-  .tab-count{display:inline-block;background:var(--red);color:#fff;border-radius:10px;font-size:9px;padding:1px 5px;margin-left:4px;vertical-align:middle;font-weight:bold;min-width:16px;text-align:center;}
-  .tab.active .tab-count{background:var(--green-light);}
   .gps-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green-accent);margin-right:5px;animation:pulse 1.8s infinite;}
   @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.65)}}
   .detail-table{width:100%;font-size:12px;border-collapse:collapse;}
@@ -109,12 +130,15 @@
     </div>
   </div>
   <div class="tabs">
-    <div class="tab active" id="tab-scout" onclick="switchTab('scout')">🌿 Weed Scouting <span class="tab-count" id="scout-count">0</span></div>
+    <div class="tab active" id="tab-scout" onclick="switchTab('scout')">🌿 Scouting <span class="tab-count" id="scout-count">0</span></div>
     <div class="tab" id="tab-herb" onclick="switchTab('herb')">🧪 Applications <span class="tab-count" id="herb-count">0</span></div>
+    <div class="tab" id="tab-followup" onclick="switchTab('followup')">🔍 Follow-up <span class="tab-count" id="followup-count">0</span></div>
   </div>
 </header>
+
+<!-- SCOUT PANEL -->
 <div class="panel active" id="panel-scout">
-  <div class="map-wrap" id="scout-wrap">
+  <div class="map-wrap">
     <div id="scout-map"></div>
     <button class="locate-btn" onclick="locateMe('scout')">📍</button>
     <button class="layer-btn" id="scout-layer-btn" onclick="toggleLayer('scout')">🛰 Satellite</button>
@@ -139,16 +163,19 @@
     </div>
   </div>
 </div>
+
+<!-- HERB PANEL -->
 <div class="panel" id="panel-herb">
-  <div class="map-wrap" id="herb-wrap">
+  <div class="map-wrap">
     <div id="herb-map"></div>
     <button class="locate-btn" onclick="locateMe('herb')">📍</button>
     <button class="layer-btn" id="herb-layer-btn" onclick="toggleLayer('herb')">🛰 Satellite</button>
     <div class="map-tap-hint">Tap map to log an application</div>
   </div>
   <div class="legend">
-    <div class="legend-item"><div class="legend-dot" style="background:var(--green-accent)"></div>Pending compliance</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--green-accent)"></div>Application</div>
     <div class="legend-item"><div class="legend-dot" style="background:var(--archived)"></div>Compliance filed</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--red);opacity:.5"></div>Untreated weed site</div>
   </div>
   <div class="drawer" id="herb-drawer">
     <div class="drawer-handle" onclick="toggleDrawer('herb-drawer')"><span class="drawer-title">Application Log</span><span class="drawer-toggle">▲</span></div>
@@ -163,6 +190,15 @@
     </div>
   </div>
 </div>
+
+<!-- FOLLOWUP PANEL -->
+<div class="panel" id="panel-followup">
+  <div class="followup-scroll" id="followup-scroll">
+    <div class="empty-followup" id="followup-empty">✓ No follow-ups due</div>
+  </div>
+</div>
+
+<!-- MODALS -->
 <div class="modal-overlay" id="modal-scout">
   <div class="modal">
     <div class="modal-title">🌿 Flag Weed Problem</div>
@@ -179,6 +215,7 @@
     </div>
   </div>
 </div>
+
 <div class="modal-overlay" id="modal-herb">
   <div class="modal">
     <div class="modal-title">🧪 Log Herbicide Application</div>
@@ -203,6 +240,7 @@
     </div>
   </div>
 </div>
+
 <div class="modal-overlay" id="modal-detail">
   <div class="modal">
     <div class="modal-title" id="detail-title">Detail</div>
@@ -210,6 +248,7 @@
     <div class="btn-row" id="detail-actions" style="margin-top:14px;"></div>
   </div>
 </div>
+
 <div class="modal-overlay" id="modal-archived">
   <div class="modal">
     <div class="modal-title" id="archived-title">Archived</div>
@@ -217,8 +256,19 @@
     <div class="btn-row" style="margin-top:12px;"><button class="btn btn-ghost" style="flex:1" onclick="closeModal('modal-archived')">Close</button></div>
   </div>
 </div>
+
+<div class="modal-overlay" id="modal-followup-detail">
+  <div class="modal">
+    <div class="modal-title" id="followup-detail-title">🔍 Burndown Check</div>
+    <div id="followup-detail-body"></div>
+    <div class="btn-row" id="followup-detail-actions" style="margin-top:14px;flex-wrap:wrap;"></div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
+
 <script>
+// ── CONFIG ────────────────────────────────────────────────
 const GOOG_CLIENT_ID='890777241821-dt139ab7vhm8kt68vd1hfhi3163frk0j.apps.googleusercontent.com';
 const GOOG_API_KEY='AIzaSyAscphLQ9Pef0O6LUoX5i2GcJmDcqKWAGM';
 const DRIVE_SCOPES='https://www.googleapis.com/auth/drive.appdata';
@@ -228,85 +278,332 @@ const STREET_URL=`https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/{z}/
 const STREET_OPT={attribution:'© <a href="https://www.mapbox.com/">Mapbox</a>',tileSize:512,zoomOffset:-1,maxZoom:22};
 const SAT_URL=`https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/{z}/{x}/{y}?access_token=${MBKEY}`;
 const SAT_OPT={attribution:'© <a href="https://www.mapbox.com/">Mapbox</a>',tileSize:512,zoomOffset:-1,maxZoom:22};
+const FOLLOWUP_DAYS=14;
+
+// ── STATE ─────────────────────────────────────────────────
 const state={scout:[],herb:[]};
-let tempLatLng=null,scoutMap,herbMap,scoutMarkers={},herbMarkers={};
+let tempLatLng=null,scoutMap,herbMap;
+let scoutMarkers={},herbMarkers={},ghostMarkers={};
 let scoutSatOn=false,herbSatOn=false,scoutStreet,scoutSat,herbStreet,herbSat;
 let tokenClient=null,accessToken=null,driveFileId=null,gapiReady=false,gsiReady=false;
+
+// ── INIT ──────────────────────────────────────────────────
 document.getElementById('header-date').textContent=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-function initMaps(){const C=[38.3012,-77.4756],Z=17;scoutMap=L.map('scout-map',{zoomControl:true,tap:true}).setView(C,Z);scoutStreet=L.tileLayer(STREET_URL,STREET_OPT).addTo(scoutMap);scoutSat=L.tileLayer(SAT_URL,SAT_OPT);scoutMap.on('click',e=>{tempLatLng=e.latlng;clearScoutForm();openModal('modal-scout');});herbMap=L.map('herb-map',{zoomControl:true,tap:true}).setView(C,Z);herbStreet=L.tileLayer(STREET_URL,STREET_OPT).addTo(herbMap);herbSat=L.tileLayer(SAT_URL,SAT_OPT);herbMap.on('click',e=>{tempLatLng=e.latlng;clearHerbForm();openModal('modal-herb');});setTimeout(()=>{scoutMap.invalidateSize({pan:false});herbMap.invalidateSize({pan:false});},200);window.addEventListener('resize',()=>{scoutMap.invalidateSize({pan:false});herbMap.invalidateSize({pan:false});});}
-function tryAutoLoad(){if(gapiReady&&gsiReady){const hint=localStorage.getItem('umw_gdrive_hint');if(hint)tokenClient.requestAccessToken({prompt:'none',login_hint:hint});}}
+
+function initMaps(){
+  const C=[38.3012,-77.4756],Z=17;
+  scoutMap=L.map('scout-map',{zoomControl:true,tap:true}).setView(C,Z);
+  scoutStreet=L.tileLayer(STREET_URL,STREET_OPT).addTo(scoutMap);
+  scoutSat=L.tileLayer(SAT_URL,SAT_OPT);
+  scoutMap.on('click',e=>{tempLatLng=e.latlng;clearScoutForm();openModal('modal-scout');});
+  herbMap=L.map('herb-map',{zoomControl:true,tap:true}).setView(C,Z);
+  herbStreet=L.tileLayer(STREET_URL,STREET_OPT).addTo(herbMap);
+  herbSat=L.tileLayer(SAT_URL,SAT_OPT);
+  herbMap.on('click',e=>{tempLatLng=e.latlng;clearHerbForm();openModal('modal-herb');});
+  setTimeout(()=>{scoutMap.invalidateSize({pan:false});herbMap.invalidateSize({pan:false});},200);
+  window.addEventListener('resize',()=>{scoutMap.invalidateSize({pan:false});herbMap.invalidateSize({pan:false});});
+}
+
+// ── GOOGLE AUTH ───────────────────────────────────────────
+function tryAutoLoad(){if(gapiReady&&gsiReady){const h=localStorage.getItem('umw_gdrive_hint');if(h)tokenClient.requestAccessToken({prompt:'none',login_hint:h});}}
 function handleSyncClick(){if(!gapiReady||!gsiReady){showToast('Google API still loading, try again');return;}if(accessToken){syncFromDrive();}else{tokenClient.requestAccessToken({prompt:'consent'});}}
 function setSyncBtn(cls,text){const b=document.getElementById('sync-btn');b.className='sync-btn'+(cls?' '+cls:'');b.textContent=text;}
-async function syncFromDrive(){setSyncBtn('syncing','⟳ Syncing…');try{const list=await gapi.client.drive.files.list({spaces:'appDataFolder',q:`name='${DRIVE_FILE}'`,fields:'files(id,name)'});const files=list.result.files;if(files&&files.length>0){driveFileId=files[0].id;const resp=await gapi.client.drive.files.get({fileId:driveFileId,alt:'media'});const remote=JSON.parse(resp.body);mergeRemote(remote);}await pushToDrive();setSyncBtn('signed-in','✓ Synced');showToast('Sync complete');const hint=await getLoginHint();if(hint)localStorage.setItem('umw_gdrive_hint',hint);}catch(e){console.error('Sync error',e);setSyncBtn('error','☁ Sync Failed');showToast('Sync failed — check connection');}}
-async function pushToDrive(){const body=JSON.stringify({scout:state.scout,herb:state.herb});if(driveFileId){await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`,{method:'PATCH',headers:{'Authorization':'Bearer '+accessToken,'Content-Type':'application/json'},body});}else{const meta={name:DRIVE_FILE,parents:['appDataFolder']};const form=new FormData();form.append('metadata',new Blob([JSON.stringify(meta)],{type:'application/json'}));form.append('file',new Blob([body],{type:'application/json'}));const r=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',{method:'POST',headers:{'Authorization':'Bearer '+accessToken},body:form});const data=await r.json();driveFileId=data.id;}}
-function mergeRemote(remote){if(remote.scout)remote.scout.forEach(rs=>{if(!state.scout.find(ls=>ls.id===rs.id)){state.scout.push(rs);addScoutMarker(rs);}});if(remote.herb)remote.herb.forEach(ra=>{if(!state.herb.find(la=>la.id===ra.id)){state.herb.push(ra);addHerbMarker(ra);}});persist();renderScoutList();renderHerbList();updateCounts();}
+async function syncFromDrive(){setSyncBtn('syncing','⟳ Syncing…');try{const list=await gapi.client.drive.files.list({spaces:'appDataFolder',q:`name='${DRIVE_FILE}'`,fields:'files(id,name)'});const files=list.result.files;if(files&&files.length>0){driveFileId=files[0].id;const resp=await gapi.client.drive.files.get({fileId:driveFileId,alt:'media'});mergeRemote(JSON.parse(resp.body));}await pushToDrive();setSyncBtn('signed-in','✓ Synced');showToast('Sync complete');const hint=await getLoginHint();if(hint)localStorage.setItem('umw_gdrive_hint',hint);}catch(e){console.error('Sync error',e);setSyncBtn('error','☁ Sync Failed');showToast('Sync failed');}}
+async function pushToDrive(){const body=JSON.stringify({scout:state.scout,herb:state.herb});if(driveFileId){await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`,{method:'PATCH',headers:{'Authorization':'Bearer '+accessToken,'Content-Type':'application/json'},body});}else{const meta={name:DRIVE_FILE,parents:['appDataFolder']};const form=new FormData();form.append('metadata',new Blob([JSON.stringify(meta)],{type:'application/json'}));form.append('file',new Blob([body],{type:'application/json'}));const r=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',{method:'POST',headers:{'Authorization':'Bearer '+accessToken},body:form});driveFileId=(await r.json()).id;}}
+function mergeRemote(remote){if(remote.scout)remote.scout.forEach(rs=>{if(!state.scout.find(ls=>ls.id===rs.id)){state.scout.push(rs);addScoutMarker(rs);}});if(remote.herb)remote.herb.forEach(ra=>{if(!state.herb.find(la=>la.id===ra.id)){state.herb.push(ra);addHerbMarker(ra);}});persist();renderAll();}
 async function getLoginHint(){try{const r=await gapi.client.request({path:'https://www.googleapis.com/oauth2/v3/userinfo'});return r.result.email||null;}catch(e){return null;}}
 function syncAfterSave(){if(accessToken){setSyncBtn('syncing','⟳ Saving…');pushToDrive().then(()=>setSyncBtn('signed-in','✓ Synced')).catch(()=>setSyncBtn('error','☁ Save Failed'));}}
+
+// ── TOAST ─────────────────────────────────────────────────
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
-function toggleLayer(tab){if(tab==='scout'){scoutSatOn=!scoutSatOn;if(scoutSatOn){scoutMap.removeLayer(scoutStreet);scoutSat.addTo(scoutMap);document.getElementById('scout-layer-btn').textContent='🗺 Street';}else{scoutMap.removeLayer(scoutSat);scoutStreet.addTo(scoutMap);document.getElementById('scout-layer-btn').textContent='🛰 Satellite';}}else{herbSatOn=!herbSatOn;if(herbSatOn){herbMap.removeLayer(herbStreet);herbSat.addTo(herbMap);document.getElementById('herb-layer-btn').textContent='🗺 Street';}else{herbMap.removeLayer(herbSat);herbStreet.addTo(herbMap);document.getElementById('herb-layer-btn').textContent='🛰 Satellite';}}}
-function switchTab(tab){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));document.getElementById('tab-'+tab).classList.add('active');document.getElementById('panel-'+tab).classList.add('active');setTimeout(()=>(tab==='scout'?scoutMap:herbMap).invalidateSize({pan:false}),80);}
+
+// ── LAYER TOGGLE ──────────────────────────────────────────
+function toggleLayer(tab){
+  if(tab==='scout'){scoutSatOn=!scoutSatOn;if(scoutSatOn){scoutMap.removeLayer(scoutStreet);scoutSat.addTo(scoutMap);document.getElementById('scout-layer-btn').textContent='🗺 Street';}else{scoutMap.removeLayer(scoutSat);scoutStreet.addTo(scoutMap);document.getElementById('scout-layer-btn').textContent='🛰 Satellite';}}
+  else{herbSatOn=!herbSatOn;if(herbSatOn){herbMap.removeLayer(herbStreet);herbSat.addTo(herbMap);document.getElementById('herb-layer-btn').textContent='🗺 Street';}else{herbMap.removeLayer(herbSat);herbStreet.addTo(herbMap);document.getElementById('herb-layer-btn').textContent='🛰 Satellite';}}
+}
+
+// ── TABS ──────────────────────────────────────────────────
+function switchTab(tab){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  document.getElementById('panel-'+tab).classList.add('active');
+  if(tab==='scout')setTimeout(()=>scoutMap.invalidateSize({pan:false}),80);
+  if(tab==='herb'){setTimeout(()=>herbMap.invalidateSize({pan:false}),80);refreshGhostMarkers();}
+  if(tab==='followup')renderFollowup();
+}
+
 function toggleDrawer(id){document.getElementById(id).classList.toggle('open');}
 function openModal(id){document.getElementById(id).classList.add('open');}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
+
+// ── AGE HELPERS ───────────────────────────────────────────
 function ageClass(d){const x=(Date.now()-new Date(d))/86400000;return x<7?'fresh':x<30?'aging':'old';}
 function ageLabel(d){const x=Math.floor((Date.now()-new Date(d))/86400000);return x===0?'Today':x===1?'1 day ago':x+' days ago';}
+function daysAgo(d){return Math.floor((Date.now()-new Date(d))/86400000);}
 function chipAge(d){const m={fresh:['chip-red','<7 d'],aging:['chip-yellow','7–30 d'],old:['chip-gray','>30 d']};const[c,l]=m[ageClass(d)];return`<span class="chip ${c}">${l}</span>`;}
+
+// ── ICONS ─────────────────────────────────────────────────
 function weedIcon(ageC,archived){const cols={fresh:'#c0392b',aging:'#c8960a',old:'#7a7a7a'};const col=archived?'#9b9b9b':(cols[ageC]||'#7a7a7a');const op=archived?'0.5':'1';return L.divIcon({className:'',iconSize:[24,24],iconAnchor:[12,24],popupAnchor:[0,-26],html:`<div style="width:24px;height:24px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:${col};border:2.5px solid rgba(255,255,255,.75);box-shadow:0 2px 6px rgba(0,0,0,.4);opacity:${op}"></div>`});}
-function herbIcon(dimmed){const col=dimmed?'#9b9b9b':'#5a9e5a';const op=dimmed?'0.55':'1';return L.divIcon({className:'',iconSize:[22,22],iconAnchor:[11,11],popupAnchor:[0,-14],html:`<div style="width:22px;height:22px;border-radius:4px;transform:rotate(45deg);background:${col};border:2.5px solid rgba(255,255,255,.75);box-shadow:0 2px 6px rgba(0,0,0,.4);opacity:${op}"></div>`});}
-function saveScoutSite(){if(!tempLatLng){alert('No location captured.');return;}const s={id:Date.now(),name:v('scout-name')||'Unnamed site',species:v('scout-species'),density:v('scout-density'),treatment:v('scout-treatment'),notes:v('scout-notes'),lat:tempLatLng.lat,lng:tempLatLng.lng,date:new Date().toISOString(),archived:false};state.scout.push(s);persist();addScoutMarker(s);renderScoutList();updateCounts();closeModal('modal-scout');syncAfterSave();}
+function ghostWeedIcon(){return L.divIcon({className:'',iconSize:[20,20],iconAnchor:[10,20],html:`<div style="width:20px;height:20px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:#c0392b;border:2px dashed rgba(255,255,255,.5);opacity:0.38"></div>`});}
+function herbIcon(app){const col=app.needsRetreat?'#8e44ad':app.complianceLogged||app.archived?'#9b9b9b':'#5a9e5a';const op=app.complianceLogged||app.archived?'0.55':'1';return L.divIcon({className:'',iconSize:[22,22],iconAnchor:[11,11],popupAnchor:[0,-14],html:`<div style="width:22px;height:22px;border-radius:4px;transform:rotate(45deg);background:${col};border:2.5px solid rgba(255,255,255,.75);box-shadow:0 2px 6px rgba(0,0,0,.4);opacity:${op}"></div>`});}
+
+// ── GHOST MARKERS (scout pins on herb map) ────────────────
+function refreshGhostMarkers(){
+  // Remove existing ghost markers
+  Object.values(ghostMarkers).forEach(m=>herbMap.removeLayer(m));
+  ghostMarkers={};
+  // Add ghost for each active (non-archived) scout site
+  state.scout.filter(s=>!s.archived).forEach(s=>{
+    const m=L.marker([s.lat,s.lng],{icon:ghostWeedIcon(),interactive:false,zIndexOffset:-1000});
+    m.addTo(herbMap);
+    ghostMarkers[s.id]=m;
+  });
+}
+
+// ── SAVE SCOUT ────────────────────────────────────────────
+function saveScoutSite(){if(!tempLatLng){alert('No location captured.');return;}const s={id:Date.now(),name:v('scout-name')||'Unnamed site',species:v('scout-species'),density:v('scout-density'),treatment:v('scout-treatment'),notes:v('scout-notes'),lat:tempLatLng.lat,lng:tempLatLng.lng,date:new Date().toISOString(),archived:false};state.scout.push(s);persist();addScoutMarker(s);renderAll();closeModal('modal-scout');syncAfterSave();}
 function clearScoutForm(){['scout-name','scout-species','scout-treatment','scout-notes'].forEach(id=>document.getElementById(id).value='');document.getElementById('scout-density').value='Light';}
 function addScoutMarker(s){const m=L.marker([s.lat,s.lng],{icon:weedIcon(ageClass(s.date),s.archived)});m.on('click',()=>showScoutDetail(s.id));m.addTo(scoutMap);scoutMarkers[s.id]=m;}
 function refreshScoutIcon(s){const m=scoutMarkers[s.id];if(m)m.setIcon(weedIcon(ageClass(s.date),s.archived));}
-function saveHerbApp(){if(!tempLatLng){alert('No location captured.');return;}const a={id:Date.now(),name:v('herb-name')||'Unnamed site',product:v('herb-product'),epa:v('herb-epa'),method:v('herb-method'),volume:v('herb-volume'),rate:v('herb-rate'),target:v('herb-target'),applicator:v('herb-applicator'),notes:v('herb-notes'),lat:tempLatLng.lat,lng:tempLatLng.lng,date:new Date().toISOString(),complianceLogged:false,archived:false};state.herb.push(a);persist();addHerbMarker(a);renderHerbList();updateCounts();closeModal('modal-herb');syncAfterSave();}
+
+// ── SAVE HERB ─────────────────────────────────────────────
+function saveHerbApp(){if(!tempLatLng){alert('No location captured.');return;}const a={id:Date.now(),name:v('herb-name')||'Unnamed site',product:v('herb-product'),epa:v('herb-epa'),method:v('herb-method'),volume:v('herb-volume'),rate:v('herb-rate'),target:v('herb-target'),applicator:v('herb-applicator'),notes:v('herb-notes'),lat:tempLatLng.lat,lng:tempLatLng.lng,date:new Date().toISOString(),complianceLogged:false,archived:false,followupDone:false,needsRetreat:false,followupNotes:'',followupDate:null};state.herb.push(a);persist();addHerbMarker(a);renderAll();closeModal('modal-herb');syncAfterSave();}
 function clearHerbForm(){['herb-name','herb-product','herb-epa','herb-volume','herb-rate','herb-target','herb-applicator','herb-notes'].forEach(id=>document.getElementById(id).value='');}
-function addHerbMarker(a){const m=L.marker([a.lat,a.lng],{icon:herbIcon(a.complianceLogged||a.archived)});m.on('click',()=>showHerbDetail(a.id));m.addTo(herbMap);herbMarkers[a.id]=m;}
-function refreshHerbIcon(a){const m=herbMarkers[a.id];if(m)m.setIcon(herbIcon(a.complianceLogged||a.archived));}
-function showScoutDetail(id){const s=state.scout.find(x=>x.id===id);if(!s)return;document.getElementById('detail-title').textContent='🌿 '+s.name;document.getElementById('detail-body').innerHTML=`<div style="margin-bottom:10px">${chipAge(s.date)}${s.archived?'<span class="chip chip-archived" style="margin-left:5px">Archived</span>':''}</div><table class="detail-table">${tr('Flagged',fmt(s.date)+' ('+ageLabel(s.date)+')')}${tr('Species',s.species||'—')}${tr('Density',s.density)}${tr('Treatment',s.treatment||'—')}${tr('Coords',s.lat.toFixed(5)+', '+s.lng.toFixed(5))}${s.notes?tr('Notes',s.notes):''}</table>`;const acts=document.getElementById('detail-actions');acts.innerHTML='';if(!s.archived){mkbtn(acts,'📁 Archive','btn-warn btn-sm',()=>{s.archived=true;persist();refreshScoutIcon(s);renderScoutList();updateCounts();closeModal('modal-detail');syncAfterSave();});mkbtn(acts,'🗑 Delete','btn-danger btn-sm',()=>delScout(id));}else{mkbtn(acts,'↩ Restore','btn-ghost btn-sm',()=>{s.archived=false;persist();refreshScoutIcon(s);renderScoutList();updateCounts();closeModal('modal-detail');closeModal('modal-archived');syncAfterSave();});}mkbtn(acts,'Close','btn-ghost btn-sm',()=>closeModal('modal-detail'),true);openModal('modal-detail');}
-function delScout(id){if(!confirm('Delete permanently?'))return;state.scout=state.scout.filter(s=>s.id!==id);if(scoutMarkers[id]){scoutMap.removeLayer(scoutMarkers[id]);delete scoutMarkers[id];}persist();renderScoutList();updateCounts();closeModal('modal-detail');syncAfterSave();}
-function showHerbDetail(id){const a=state.herb.find(x=>x.id===id);if(!a)return;document.getElementById('detail-title').textContent='🧪 '+a.name;document.getElementById('detail-body').innerHTML=`<div style="margin-bottom:10px"><span class="chip ${a.complianceLogged?'chip-archived':'chip-green'}">${a.complianceLogged?'Compliance Filed':'Pending Compliance'}</span>${a.archived?'<span class="chip chip-archived" style="margin-left:5px">Archived</span>':''}</div><table class="detail-table">${tr('Date',fmt(a.date))}${tr('Product',a.product||'—')}${tr('EPA Reg #',a.epa||'—')}${tr('Method',a.method)}${tr('Volume',a.volume||'—')}${tr('Mix Rate',a.rate||'—')}${tr('Target',a.target||'—')}${tr('Applicator',a.applicator||'—')}${tr('Coords',a.lat.toFixed(5)+', '+a.lng.toFixed(5))}${a.notes?tr('Notes',a.notes):''}</table>`;const acts=document.getElementById('detail-actions');acts.innerHTML='';if(!a.archived){if(!a.complianceLogged)mkbtn(acts,'✅ Compliance Filed','btn-primary btn-sm',()=>{a.complianceLogged=true;persist();refreshHerbIcon(a);renderHerbList();updateCounts();closeModal('modal-detail');syncAfterSave();});mkbtn(acts,'📁 Archive','btn-warn btn-sm',()=>{a.archived=true;persist();refreshHerbIcon(a);renderHerbList();updateCounts();closeModal('modal-detail');syncAfterSave();});mkbtn(acts,'🗑 Delete','btn-danger btn-sm',()=>delHerb(id));}else{mkbtn(acts,'↩ Restore','btn-ghost btn-sm',()=>{a.archived=false;persist();refreshHerbIcon(a);renderHerbList();updateCounts();closeModal('modal-detail');closeModal('modal-archived');syncAfterSave();});}mkbtn(acts,'Close','btn-ghost btn-sm',()=>closeModal('modal-detail'),true);openModal('modal-detail');}
-function delHerb(id){if(!confirm('Delete permanently?'))return;state.herb=state.herb.filter(a=>a.id!==id);if(herbMarkers[id]){herbMap.removeLayer(herbMarkers[id]);delete herbMarkers[id];}persist();renderHerbList();updateCounts();closeModal('modal-detail');syncAfterSave();}
+function addHerbMarker(a){const m=L.marker([a.lat,a.lng],{icon:herbIcon(a)});m.on('click',()=>showHerbDetail(a.id));m.addTo(herbMap);herbMarkers[a.id]=m;}
+function refreshHerbIcon(a){const m=herbMarkers[a.id];if(m)m.setIcon(herbIcon(a));}
+
+// ── FOLLOWUP LOGIC ────────────────────────────────────────
+function followupDue(a){
+  if(a.archived||a.followupDone||a.needsRetreat)return false;
+  return daysAgo(a.date)>=FOLLOWUP_DAYS;
+}
+function followupOverdue(a){
+  if(a.archived||a.followupDone||a.needsRetreat)return false;
+  return daysAgo(a.date)>=FOLLOWUP_DAYS+7; // overdue if 21+ days
+}
+function followupCount(){
+  return state.herb.filter(a=>followupDue(a)||a.needsRetreat).length;
+}
+
+function renderFollowup(){
+  const scroll=document.getElementById('followup-scroll');
+  const due=state.herb.filter(a=>followupDue(a));
+  const retreat=state.herb.filter(a=>a.needsRetreat&&!a.archived);
+  const recent=state.herb.filter(a=>a.followupDone&&!a.archived&&daysAgo(a.followupDate)<7);
+
+  if(!due.length&&!retreat.length&&!recent.length){
+    scroll.innerHTML='<div class="empty-followup">✓ No follow-ups due<br><span style="font-size:10px;margin-top:8px;display:block;color:var(--tan)">Applications are checked 14 days after treatment</span></div>';
+    return;
+  }
+
+  let html='';
+
+  if(retreat.length){
+    html+=`<div class="followup-section-title">⚠️ Needs Retreatment (${retreat.length})</div>`;
+    retreat.forEach(a=>{
+      html+=`<div class="followup-item needs-retreat" onclick="showFollowupDetail('${a.id}')">
+        <div class="followup-name">${a.name}</div>
+        <div class="followup-meta">${a.product||'Product unspecified'} · Applied ${fmt(a.date)}</div>
+        ${a.followupNotes?`<div class="followup-meta" style="margin-top:4px;font-style:italic">"${a.followupNotes}"</div>`:''}
+        <div class="followup-actions">
+          <span class="chip chip-purple">Needs Retreat</span>
+        </div>
+      </div>`;
+    });
+  }
+
+  if(due.length){
+    const overdue=due.filter(a=>followupOverdue(a));
+    const normal=due.filter(a=>!followupOverdue(a));
+    if(overdue.length){
+      html+=`<div class="followup-section-title">🔴 Overdue Check (${overdue.length})</div>`;
+      overdue.forEach(a=>{html+=followupCard(a,true);});
+    }
+    if(normal.length){
+      html+=`<div class="followup-section-title">🟡 Due for Check (${normal.length})</div>`;
+      normal.forEach(a=>{html+=followupCard(a,false);});
+    }
+  }
+
+  if(recent.length){
+    html+=`<div class="followup-section-title">✓ Recently Checked</div>`;
+    recent.forEach(a=>{
+      html+=`<div class="followup-item checked">
+        <div class="followup-name">${a.name}</div>
+        <div class="followup-meta">Checked ${fmt(a.followupDate)} · <span style="color:var(--green-accent)">Successful burndown</span></div>
+      </div>`;
+    });
+  }
+
+  scroll.innerHTML=html;
+}
+
+function followupCard(a,overdue){
+  const d=daysAgo(a.date);
+  return`<div class="followup-item${overdue?' overdue':''}" onclick="showFollowupDetail('${a.id}')">
+    <div class="followup-name">${a.name}</div>
+    <div class="followup-meta">${a.product||'Product unspecified'} · Applied ${fmt(a.date)} (${d} days ago)</div>
+    <div class="followup-actions">
+      <span class="chip ${overdue?'chip-red':'chip-orange'}">${overdue?'Overdue':'Due now'}</span>
+    </div>
+  </div>`;
+}
+
+function showFollowupDetail(id){
+  const a=state.herb.find(x=>String(x.id)===String(id));if(!a)return;
+  document.getElementById('followup-detail-title').textContent='🔍 '+a.name;
+  document.getElementById('followup-detail-body').innerHTML=`
+    <table class="detail-table">
+      ${tr('Applied',fmt(a.date)+' ('+daysAgo(a.date)+' days ago)')}
+      ${tr('Product',a.product||'—')}
+      ${tr('Method',a.method)}
+      ${tr('Target',a.target||'—')}
+      ${a.followupNotes?tr('Notes',a.followupNotes):''}
+    </table>
+    <div style="margin-top:14px;">
+      <label style="display:block;margin-bottom:6px">Follow-up notes</label>
+      <textarea id="followup-notes-input" placeholder="Observed burndown, plant condition, remarks…" style="width:100%;height:60px;background:var(--green-mid);border:1px solid var(--green-light);border-radius:4px;color:var(--cream);font-size:14px;padding:7px 8px;font-family:inherit;resize:none;">${a.followupNotes||''}</textarea>
+    </div>`;
+  const acts=document.getElementById('followup-detail-actions');acts.innerHTML='';
+  if(!a.followupDone&&!a.needsRetreat){
+    mkbtn(acts,'✅ Successful Burndown','btn-primary btn-sm',()=>markFollowupSuccess(a.id));
+    mkbtn(acts,'⚠️ Needs Retreatment','btn-purple btn-sm',()=>markNeedsRetreat(a.id));
+  } else if(a.needsRetreat){
+    mkbtn(acts,'✅ Retreat Complete','btn-primary btn-sm',()=>markRetreatComplete(a.id));
+  }
+  mkbtn(acts,'Close','btn-ghost btn-sm',()=>closeModal('modal-followup-detail'),true);
+  openModal('modal-followup-detail');
+}
+
+function getFollowupNotes(){return document.getElementById('followup-notes-input')?.value?.trim()||'';}
+
+function markFollowupSuccess(id){
+  const a=state.herb.find(x=>String(x.id)===String(id));if(!a)return;
+  a.followupDone=true;
+  a.needsRetreat=false;
+  a.followupDate=new Date().toISOString();
+  a.followupNotes=getFollowupNotes();
+  // Auto-archive the related scout pin if one exists nearby (within ~50m)
+  const nearby=state.scout.filter(s=>!s.archived&&distance(s.lat,s.lng,a.lat,a.lng)<0.05);
+  nearby.forEach(s=>{s.archived=true;refreshScoutIcon(s);});
+  persist();refreshHerbIcon(a);renderAll();closeModal('modal-followup-detail');
+  showToast(nearby.length?`Burndown logged. ${nearby.length} scout pin(s) archived.`:'Burndown logged successfully.');
+  syncAfterSave();
+}
+
+function markNeedsRetreat(id){
+  const a=state.herb.find(x=>String(x.id)===String(id));if(!a)return;
+  a.needsRetreat=true;
+  a.followupDone=false;
+  a.followupDate=new Date().toISOString();
+  a.followupNotes=getFollowupNotes();
+  persist();refreshHerbIcon(a);renderAll();closeModal('modal-followup-detail');
+  showToast('Flagged for retreatment.');
+  syncAfterSave();
+}
+
+function markRetreatComplete(id){
+  const a=state.herb.find(x=>String(x.id)===String(id));if(!a)return;
+  a.needsRetreat=false;
+  a.followupDone=true;
+  a.followupDate=new Date().toISOString();
+  a.followupNotes=getFollowupNotes();
+  const nearby=state.scout.filter(s=>!s.archived&&distance(s.lat,s.lng,a.lat,a.lng)<0.05);
+  nearby.forEach(s=>{s.archived=true;refreshScoutIcon(s);});
+  persist();refreshHerbIcon(a);renderAll();closeModal('modal-followup-detail');
+  showToast('Retreat logged. Site resolved.');
+  syncAfterSave();
+}
+
+// Rough distance in km between two lat/lng points
+function distance(lat1,lng1,lat2,lng2){
+  const R=6371,dLat=(lat2-lat1)*Math.PI/180,dLng=(lng2-lng1)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+// ── SCOUT DETAIL ──────────────────────────────────────────
+function showScoutDetail(id){const s=state.scout.find(x=>x.id===id);if(!s)return;document.getElementById('detail-title').textContent='🌿 '+s.name;document.getElementById('detail-body').innerHTML=`<div style="margin-bottom:10px">${chipAge(s.date)}${s.archived?'<span class="chip chip-archived" style="margin-left:5px">Archived</span>':''}</div><table class="detail-table">${tr('Flagged',fmt(s.date)+' ('+ageLabel(s.date)+')')}${tr('Species',s.species||'—')}${tr('Density',s.density)}${tr('Treatment',s.treatment||'—')}${tr('Coords',s.lat.toFixed(5)+', '+s.lng.toFixed(5))}${s.notes?tr('Notes',s.notes):''}</table>`;const acts=document.getElementById('detail-actions');acts.innerHTML='';if(!s.archived){mkbtn(acts,'📁 Archive','btn-warn btn-sm',()=>{s.archived=true;persist();refreshScoutIcon(s);renderAll();closeModal('modal-detail');syncAfterSave();});mkbtn(acts,'🗑 Delete','btn-danger btn-sm',()=>delScout(id));}else{mkbtn(acts,'↩ Restore','btn-ghost btn-sm',()=>{s.archived=false;persist();refreshScoutIcon(s);renderAll();closeModal('modal-detail');closeModal('modal-archived');syncAfterSave();});}mkbtn(acts,'Close','btn-ghost btn-sm',()=>closeModal('modal-detail'),true);openModal('modal-detail');}
+function delScout(id){if(!confirm('Delete permanently?'))return;state.scout=state.scout.filter(s=>s.id!==id);if(scoutMarkers[id]){scoutMap.removeLayer(scoutMarkers[id]);delete scoutMarkers[id];}persist();renderAll();closeModal('modal-detail');syncAfterSave();}
+
+// ── HERB DETAIL ───────────────────────────────────────────
+function showHerbDetail(id){const a=state.herb.find(x=>x.id===id);if(!a)return;document.getElementById('detail-title').textContent='🧪 '+a.name;
+let statusChip=`<span class="chip ${a.needsRetreat?'chip-purple':a.complianceLogged?'chip-archived':'chip-green'}">${a.needsRetreat?'Needs Retreat':a.complianceLogged?'Compliance Filed':'Pending Compliance'}</span>`;
+if(a.followupDone&&!a.needsRetreat)statusChip+=` <span class="chip chip-green" style="margin-left:4px">✓ Burndown OK</span>`;
+document.getElementById('detail-body').innerHTML=`<div style="margin-bottom:10px">${statusChip}${a.archived?'<span class="chip chip-archived" style="margin-left:5px">Archived</span>':''}</div><table class="detail-table">${tr('Date',fmt(a.date))}${tr('Product',a.product||'—')}${tr('EPA Reg #',a.epa||'—')}${tr('Method',a.method)}${tr('Volume',a.volume||'—')}${tr('Mix Rate',a.rate||'—')}${tr('Target',a.target||'—')}${tr('Applicator',a.applicator||'—')}${tr('Coords',a.lat.toFixed(5)+', '+a.lng.toFixed(5))}${a.followupNotes?tr('Follow-up',a.followupNotes):''}${a.notes?tr('Notes',a.notes):''}</table>`;
+const acts=document.getElementById('detail-actions');acts.innerHTML='';
+if(!a.archived){
+  if(!a.complianceLogged)mkbtn(acts,'✅ Compliance Filed','btn-primary btn-sm',()=>{a.complianceLogged=true;persist();refreshHerbIcon(a);renderAll();closeModal('modal-detail');syncAfterSave();});
+  if(followupDue(a)||a.needsRetreat)mkbtn(acts,'🔍 Log Follow-up','btn-warn btn-sm',()=>{closeModal('modal-detail');showFollowupDetail(a.id);});
+  mkbtn(acts,'📁 Archive','btn-ghost btn-sm',()=>{a.archived=true;persist();refreshHerbIcon(a);renderAll();closeModal('modal-detail');syncAfterSave();});
+  mkbtn(acts,'🗑 Delete','btn-danger btn-sm',()=>delHerb(id));
+}else{mkbtn(acts,'↩ Restore','btn-ghost btn-sm',()=>{a.archived=false;persist();refreshHerbIcon(a);renderAll();closeModal('modal-detail');closeModal('modal-archived');syncAfterSave();});}
+mkbtn(acts,'Close','btn-ghost btn-sm',()=>closeModal('modal-detail'),true);openModal('modal-detail');}
+function delHerb(id){if(!confirm('Delete permanently?'))return;state.herb=state.herb.filter(a=>a.id!==id);if(herbMarkers[id]){herbMap.removeLayer(herbMarkers[id]);delete herbMarkers[id];}persist();renderAll();closeModal('modal-detail');syncAfterSave();}
+
+// ── RENDER ALL ────────────────────────────────────────────
+function renderAll(){renderScoutList();renderHerbList();updateCounts();refreshGhostMarkers();}
+
 function renderScoutList(){const el=document.getElementById('scout-list');const items=state.scout.filter(s=>!s.archived).sort((a,b)=>new Date(b.date)-new Date(a.date));if(!items.length){el.innerHTML='<div class="empty-state">No active sites</div>';return;}el.innerHTML=items.map(s=>`<div class="site-item ${ageClass(s.date)}" onclick="showScoutDetail(${s.id})"><div class="site-info"><div class="site-name">${s.name}</div><div class="site-meta">${s.species||'Species unknown'} · ${s.density} · ${ageLabel(s.date)}</div></div>${chipAge(s.date)}</div>`).join('');}
-function renderHerbList(){const el=document.getElementById('herb-list');const items=state.herb.filter(a=>!a.archived).sort((a,b)=>new Date(b.date)-new Date(a.date));if(!items.length){el.innerHTML='<div class="empty-state">No active application records</div>';return;}el.innerHTML=items.map(a=>`<div class="app-log-item ${a.complianceLogged?'compliance-logged':''}" onclick="showHerbDetail(${a.id})"><div class="log-info"><div class="log-name">${a.name}</div><div class="log-meta">${a.product||'Unspecified'} · ${a.method} · ${fmt(a.date)}</div></div><span class="chip ${a.complianceLogged?'chip-archived':'chip-green'}">${a.complianceLogged?'Filed':'Pending'}</span></div>`).join('');}
+
+function renderHerbList(){const el=document.getElementById('herb-list');const items=state.herb.filter(a=>!a.archived).sort((a,b)=>new Date(b.date)-new Date(a.date));if(!items.length){el.innerHTML='<div class="empty-state">No active application records</div>';return;}el.innerHTML=items.map(a=>{const chip=a.needsRetreat?'<span class="chip chip-purple">Retreat</span>':a.complianceLogged?'<span class="chip chip-archived">Filed</span>':'<span class="chip chip-green">Pending</span>';return`<div class="app-log-item ${a.complianceLogged?'compliance-logged':''} ${a.needsRetreat?'needs-retreat':''}" onclick="showHerbDetail(${a.id})"><div class="log-info"><div class="log-name">${a.name}</div><div class="log-meta">${a.product||'Unspecified'} · ${a.method} · ${fmt(a.date)}</div></div>${chip}</div>`;}).join('');}
+
+function updateCounts(){
+  document.getElementById('scout-count').textContent=state.scout.filter(s=>!s.archived).length;
+  document.getElementById('herb-count').textContent=state.herb.filter(a=>!a.archived&&!a.complianceLogged).length;
+  const fc=followupCount();
+  const fcEl=document.getElementById('followup-count');
+  fcEl.textContent=fc;
+  fcEl.className='tab-count'+(fc>0?' urgent':'');
+}
+
+// ── ARCHIVED ──────────────────────────────────────────────
 function showArchived(type){document.getElementById('archived-title').textContent=type==='scout'?'📁 Archived Weed Sites':'📁 Archived Applications';const items=(type==='scout'?state.scout:state.herb).filter(x=>x.archived);const fn=type==='scout'?'showScoutDetail':'showHerbDetail';document.getElementById('archived-body').innerHTML=!items.length?'<div class="empty-state">Nothing archived</div>':items.map(x=>`<div class="site-item archived" onclick="closeModal('modal-archived');${fn}(${x.id})"><div class="site-info"><div class="site-name">${x.name}</div><div class="site-meta">${fmt(x.date)}</div></div><span class="chip chip-archived">Archived</span></div>`).join('');openModal('modal-archived');}
-function updateCounts(){document.getElementById('scout-count').textContent=state.scout.filter(s=>!s.archived).length;document.getElementById('herb-count').textContent=state.herb.filter(a=>!a.archived&&!a.complianceLogged).length;}
+
+// ── GPS ───────────────────────────────────────────────────
 function locateMe(tab){if(!navigator.geolocation){alert('Geolocation not available.');return;}navigator.geolocation.getCurrentPosition(p=>{const ll=[p.coords.latitude,p.coords.longitude];(tab==='scout'?scoutMap:herbMap).setView(ll,19);},()=>alert('Could not get location.'));}
-function exportCSV(type){let h,rows;if(type==='scout'){h=['ID','Name','Species','Density','Treatment','Notes','Lat','Lng','Date','Archived'];rows=state.scout.map(s=>[s.id,s.name,s.species,s.density,s.treatment,s.notes,s.lat,s.lng,s.date,s.archived]);}else{h=['ID','Name','Product','EPA_Reg','Method','Volume','Rate','Target','Applicator','Notes','Lat','Lng','Date','ComplianceLogged','Archived'];rows=state.herb.map(a=>[a.id,a.name,a.product,a.epa,a.method,a.volume,a.rate,a.target,a.applicator,a.notes,a.lat,a.lng,a.date,a.complianceLogged,a.archived]);}const csv=[h,...rows].map(r=>r.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=`umw_${type}_${new Date().toISOString().slice(0,10)}.csv`;a.click();}
+
+// ── CSV ───────────────────────────────────────────────────
+function exportCSV(type){let h,rows;if(type==='scout'){h=['ID','Name','Species','Density','Treatment','Notes','Lat','Lng','Date','Archived'];rows=state.scout.map(s=>[s.id,s.name,s.species,s.density,s.treatment,s.notes,s.lat,s.lng,s.date,s.archived]);}else{h=['ID','Name','Product','EPA_Reg','Method','Volume','Rate','Target','Applicator','Notes','Lat','Lng','Date','ComplianceLogged','Archived','FollowupDone','NeedsRetreat','FollowupDate','FollowupNotes'];rows=state.herb.map(a=>[a.id,a.name,a.product,a.epa,a.method,a.volume,a.rate,a.target,a.applicator,a.notes,a.lat,a.lng,a.date,a.complianceLogged,a.archived,a.followupDone,a.needsRetreat,a.followupDate,a.followupNotes]);}const csv=[h,...rows].map(r=>r.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=`umw_${type}_${new Date().toISOString().slice(0,10)}.csv`;a.click();}
 function triggerImport(type){document.getElementById('import-'+type).value='';document.getElementById('import-'+type).click();}
-function importCSV(event,type){const file=event.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=function(e){const text=e.target.result;const rows=parseCSV(text);if(rows.length<2){alert('CSV appears empty or unreadable.');return;}const headers=rows[0].map(h=>h.trim().toLowerCase());const dataRows=rows.slice(1).filter(r=>r.some(c=>c.trim()!==''));let added=0,skipped=0;if(type==='scout'){const idx={name:headers.indexOf('name'),species:headers.indexOf('species'),density:headers.indexOf('density'),treatment:headers.indexOf('treatment'),notes:headers.indexOf('notes'),lat:headers.indexOf('lat'),lng:headers.indexOf('lng'),date:headers.indexOf('date'),archived:headers.indexOf('archived')};if(idx.lat===-1||idx.lng===-1){alert('Missing Lat/Lng columns.');return;}dataRows.forEach(row=>{const lat=parseFloat(row[idx.lat]);const lng=parseFloat(row[idx.lng]);const date=row[idx.date]?row[idx.date].trim():new Date().toISOString();if(isNaN(lat)||isNaN(lng)){skipped++;return;}const isDupe=state.scout.some(s=>Math.abs(s.lat-lat)<0.00001&&Math.abs(s.lng-lng)<0.00001&&s.date===date);if(isDupe){skipped++;return;}const site={id:Date.now()+Math.random(),name:idx.name>=0?row[idx.name].trim():'Imported site',species:idx.species>=0?row[idx.species].trim():'',density:idx.density>=0?row[idx.density].trim():'Unknown',treatment:idx.treatment>=0?row[idx.treatment].trim():'',notes:idx.notes>=0?row[idx.notes].trim():'',lat,lng,date,archived:idx.archived>=0?row[idx.archived].trim().toLowerCase()==='true':false};state.scout.push(site);addScoutMarker(site);added++;});persist();renderScoutList();updateCounts();}else{const idx={name:headers.indexOf('name'),product:headers.indexOf('product'),epa:headers.indexOf('epa_reg'),method:headers.indexOf('method'),volume:headers.indexOf('volume'),rate:headers.indexOf('rate'),target:headers.indexOf('target'),applicator:headers.indexOf('applicator'),notes:headers.indexOf('notes'),lat:headers.indexOf('lat'),lng:headers.indexOf('lng'),date:headers.indexOf('date'),compliance:headers.indexOf('compliancelogged'),archived:headers.indexOf('archived')};if(idx.lat===-1||idx.lng===-1){alert('Missing Lat/Lng columns.');return;}dataRows.forEach(row=>{const lat=parseFloat(row[idx.lat]);const lng=parseFloat(row[idx.lng]);const date=row[idx.date]?row[idx.date].trim():new Date().toISOString();if(isNaN(lat)||isNaN(lng)){skipped++;return;}const isDupe=state.herb.some(a=>Math.abs(a.lat-lat)<0.00001&&Math.abs(a.lng-lng)<0.00001&&a.date===date);if(isDupe){skipped++;return;}const app={id:Date.now()+Math.random(),name:idx.name>=0?row[idx.name].trim():'Imported site',product:idx.product>=0?row[idx.product].trim():'',epa:idx.epa>=0?row[idx.epa].trim():'',method:idx.method>=0?row[idx.method].trim():'',volume:idx.volume>=0?row[idx.volume].trim():'',rate:idx.rate>=0?row[idx.rate].trim():'',target:idx.target>=0?row[idx.target].trim():'',applicator:idx.applicator>=0?row[idx.applicator].trim():'',notes:idx.notes>=0?row[idx.notes].trim():'',lat,lng,date,complianceLogged:idx.compliance>=0?row[idx.compliance].trim().toLowerCase()==='true':false,archived:idx.archived>=0?row[idx.archived].trim().toLowerCase()==='true':false};state.herb.push(app);addHerbMarker(app);added++;});persist();renderHerbList();updateCounts();}showToast(added>0?`Imported ${added} record${added!==1?'s':''}.${skipped>0?' '+skipped+' duplicate(s) skipped.':''}`:`No new records — ${skipped} duplicate(s) already in your data.`);syncAfterSave();};reader.readAsText(file);}
+function importCSV(event,type){const file=event.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=function(e){const text=e.target.result;const rows=parseCSV(text);if(rows.length<2){alert('CSV appears empty or unreadable.');return;}const headers=rows[0].map(h=>h.trim().toLowerCase());const dataRows=rows.slice(1).filter(r=>r.some(c=>c.trim()!==''));let added=0,skipped=0;if(type==='scout'){const idx={name:headers.indexOf('name'),species:headers.indexOf('species'),density:headers.indexOf('density'),treatment:headers.indexOf('treatment'),notes:headers.indexOf('notes'),lat:headers.indexOf('lat'),lng:headers.indexOf('lng'),date:headers.indexOf('date'),archived:headers.indexOf('archived')};if(idx.lat===-1||idx.lng===-1){alert('Missing Lat/Lng columns.');return;}dataRows.forEach(row=>{const lat=parseFloat(row[idx.lat]);const lng=parseFloat(row[idx.lng]);const date=row[idx.date]?row[idx.date].trim():new Date().toISOString();if(isNaN(lat)||isNaN(lng)){skipped++;return;}const isDupe=state.scout.some(s=>Math.abs(s.lat-lat)<0.00001&&Math.abs(s.lng-lng)<0.00001&&s.date===date);if(isDupe){skipped++;return;}const site={id:Date.now()+Math.random(),name:idx.name>=0?row[idx.name].trim():'Imported',species:idx.species>=0?row[idx.species].trim():'',density:idx.density>=0?row[idx.density].trim():'Unknown',treatment:idx.treatment>=0?row[idx.treatment].trim():'',notes:idx.notes>=0?row[idx.notes].trim():'',lat,lng,date,archived:idx.archived>=0?row[idx.archived].trim().toLowerCase()==='true':false};state.scout.push(site);addScoutMarker(site);added++;});}else{const idx={name:headers.indexOf('name'),product:headers.indexOf('product'),epa:headers.indexOf('epa_reg'),method:headers.indexOf('method'),volume:headers.indexOf('volume'),rate:headers.indexOf('rate'),target:headers.indexOf('target'),applicator:headers.indexOf('applicator'),notes:headers.indexOf('notes'),lat:headers.indexOf('lat'),lng:headers.indexOf('lng'),date:headers.indexOf('date'),compliance:headers.indexOf('compliancelogged'),archived:headers.indexOf('archived')};if(idx.lat===-1||idx.lng===-1){alert('Missing Lat/Lng columns.');return;}dataRows.forEach(row=>{const lat=parseFloat(row[idx.lat]);const lng=parseFloat(row[idx.lng]);const date=row[idx.date]?row[idx.date].trim():new Date().toISOString();if(isNaN(lat)||isNaN(lng)){skipped++;return;}const isDupe=state.herb.some(a=>Math.abs(a.lat-lat)<0.00001&&Math.abs(a.lng-lng)<0.00001&&a.date===date);if(isDupe){skipped++;return;}const app={id:Date.now()+Math.random(),name:idx.name>=0?row[idx.name].trim():'Imported',product:idx.product>=0?row[idx.product].trim():'',epa:idx.epa>=0?row[idx.epa].trim():'',method:idx.method>=0?row[idx.method].trim():'',volume:idx.volume>=0?row[idx.volume].trim():'',rate:idx.rate>=0?row[idx.rate].trim():'',target:idx.target>=0?row[idx.target].trim():'',applicator:idx.applicator>=0?row[idx.applicator].trim():'',notes:idx.notes>=0?row[idx.notes].trim():'',lat,lng,date,complianceLogged:idx.compliance>=0?row[idx.compliance].trim().toLowerCase()==='true':false,archived:idx.archived>=0?row[idx.archived].trim().toLowerCase()==='true':false,followupDone:false,needsRetreat:false,followupNotes:'',followupDate:null};state.herb.push(app);addHerbMarker(app);added++;});}persist();renderAll();showToast(added>0?`Imported ${added} record${added!==1?'s':''}.${skipped>0?' '+skipped+' skipped.':''}`:`No new records — ${skipped} duplicate(s).`);syncAfterSave();};reader.readAsText(file);}
 function parseCSV(text){const rows=[];let row=[],field='',inQuote=false;for(let i=0;i<text.length;i++){const c=text[i],next=text[i+1];if(inQuote){if(c==='"'&&next==='"'){field+='"';i++;}else if(c==='"'){inQuote=false;}else{field+=c;}}else{if(c==='"'){inQuote=true;}else if(c===','){row.push(field);field='';}else if(c==='\n'||(c==='\r'&&next==='\n')){row.push(field);field='';if(row.some(f=>f!==''))rows.push(row);row=[];if(c==='\r')i++;}else{field+=c;}}}if(field||row.length){row.push(field);if(row.some(f=>f!==''))rows.push(row);}return rows;}
+
+// ── HELPERS ───────────────────────────────────────────────
 function v(id){return document.getElementById(id).value.trim();}
-function fmt(iso){return new Date(iso).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}
+function fmt(iso){if(!iso)return'—';return new Date(iso).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}
 function tr(label,val){return`<tr><td>${label}</td><td>${val}</td></tr>`;}
 function mkbtn(parent,text,cls,handler,stretch){const b=document.createElement('button');b.className='btn '+cls;if(stretch)b.style.flex='1';b.textContent=text;b.onclick=handler;parent.appendChild(b);}
+
+// ── PERSIST ───────────────────────────────────────────────
 function persist(){try{localStorage.setItem('umw_scout',JSON.stringify(state.scout));localStorage.setItem('umw_herb',JSON.stringify(state.herb));}catch(e){}}
 function loadData(){try{const s=localStorage.getItem('umw_scout'),h=localStorage.getItem('umw_herb');if(s)state.scout=JSON.parse(s);if(h)state.herb=JSON.parse(h);}catch(e){}}
-loadData();initMaps();state.scout.forEach(s=>addScoutMarker(s));state.herb.forEach(a=>addHerbMarker(a));renderScoutList();renderHerbList();updateCounts();
+
+// ── BOOT ──────────────────────────────────────────────────
+loadData();
+initMaps();
+state.scout.forEach(s=>addScoutMarker(s));
+state.herb.forEach(a=>addHerbMarker(a));
+renderAll();
+
+// ── GOOGLE INIT ───────────────────────────────────────────
 function initGoogleWhenReady(){
   const gapiPresent=typeof gapi!=='undefined';
   const gsiPresent=typeof google!=='undefined'&&google.accounts;
   if(gapiPresent&&!gapiReady){
     gapi.load('client',async()=>{
-      try{
-        await gapi.client.init({apiKey:GOOG_API_KEY,discoveryDocs:['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']});
-        gapiReady=true;
-        if(gsiReady)tryAutoLoad();
-      }catch(e){console.warn('GAPI init error',e);}
+      try{await gapi.client.init({apiKey:GOOG_API_KEY,discoveryDocs:['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']});gapiReady=true;if(gsiReady)tryAutoLoad();}
+      catch(e){console.warn('GAPI init error',e);}
     });
   }
   if(gsiPresent&&!gsiReady){
     tokenClient=google.accounts.oauth2.initTokenClient({
-      client_id:GOOG_CLIENT_ID,
-      scope:DRIVE_SCOPES,
-      callback:(resp)=>{
-        if(resp.error){setSyncBtn('error','☁ Error');return;}
-        accessToken=resp.access_token;
-        gapi.client.setToken({access_token:accessToken});
-        setSyncBtn('signed-in','⟳ Sync Now');
-        syncFromDrive();
-      }
+      client_id:GOOG_CLIENT_ID,scope:DRIVE_SCOPES,
+      callback:(resp)=>{if(resp.error){setSyncBtn('error','☁ Error');return;}accessToken=resp.access_token;gapi.client.setToken({access_token:accessToken});setSyncBtn('signed-in','⟳ Sync Now');syncFromDrive();}
     });
-    gsiReady=true;
-    if(gapiReady)tryAutoLoad();
+    gsiReady=true;if(gapiReady)tryAutoLoad();
   }
   if(!gapiReady||!gsiReady){setTimeout(initGoogleWhenReady,300);}
 }
@@ -314,4 +611,3 @@ initGoogleWhenReady();
 </script>
 </body>
 </html>
-```
