@@ -8,104 +8,104 @@
 <title>UMW Weed & Herbicide Tracker</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://accounts.google.com/gsi/client"></script>
+<script src="https://apis.google.com/js/api.js"></script>
 <style>
-  :root {
-    --green-dark: #1a2e1a;
-    --green-mid: #2d4a2d;
-    --green-light: #3d6b3d;
-    --green-accent: #5a9e5a;
-    --tan: #c8b89a;
-    --cream: #f4f0e8;
-    --red: #c0392b;
-    --orange: #e07b28;
-    --yellow: #c8960a;
-    --gray: #7a7a7a;
-    --archived: #9b9b9b;
-    --white: #ffffff;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-  html { height: 100%; }
-  body { height: 100%; height: -webkit-fill-available; overflow: hidden; font-family: Georgia, serif; background: var(--green-dark); color: var(--cream); display: flex; flex-direction: column; }
-  header { background: var(--green-dark); padding: 10px 16px 0; flex-shrink: 0; border-bottom: 2px solid var(--green-light); padding-top: max(10px, env(safe-area-inset-top)); }
-  .header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-  .app-title { font-size:13px; letter-spacing:.12em; text-transform:uppercase; color:var(--tan); }
-  .app-subtitle { font-size:10px; color:var(--green-accent); letter-spacing:.08em; text-transform:uppercase; margin-top:1px; }
-  .header-badge { background: var(--green-mid); border: 1px solid var(--green-accent); border-radius: 4px; padding: 4px 8px; font-size: 10px; color: var(--tan); letter-spacing: .06em; }
-  .tabs { display:flex; gap:2px; }
-  .tab { flex:1; padding:8px 4px; text-align:center; font-size:11px; letter-spacing:.07em; text-transform:uppercase; cursor:pointer; border-radius:4px 4px 0 0; color:var(--tan); background:var(--green-mid); border:1px solid transparent; border-bottom:none; user-select:none; }
-  .tab.active { background:var(--cream); color:var(--green-dark); border-color:var(--tan); font-weight:bold; }
-  .panel { display:none; flex:1; flex-direction:column; overflow:hidden; background:var(--cream); min-height:0; }
-  .panel.active { display:flex; }
-  .map-wrap { position:relative; flex:1; min-height:0; overflow:hidden; }
-  .leaflet-container { position:absolute !important; inset:0; width:100% !important; height:100% !important; }
-  .map-tap-hint { position:absolute; bottom:12px; left:50%; transform:translateX(-50%); background:rgba(26,46,26,.88); color:var(--tan); padding:6px 14px; border-radius:20px; font-size:11px; letter-spacing:.06em; pointer-events:none; z-index:500; white-space:nowrap; border:1px solid var(--green-light); }
-  .locate-btn { position:absolute; top:10px; right:10px; z-index:500; background:var(--green-dark); border:1.5px solid var(--green-light); color:var(--tan); border-radius:6px; padding:8px 11px; font-size:16px; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,.3); }
-  .layer-btn { position:absolute; top:10px; left:10px; z-index:500; background:var(--green-dark); border:1.5px solid var(--green-light); color:var(--tan); border-radius:6px; padding:6px 10px; font-size:10px; letter-spacing:.06em; text-transform:uppercase; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,.3); }
-  .legend { display:flex; gap:10px; flex-wrap:wrap; padding:6px 14px; background:var(--green-dark); border-top:1px solid var(--green-mid); flex-shrink:0; }
-  .legend-item { display:flex; align-items:center; gap:5px; font-size:10px; color:var(--tan); }
-  .legend-dot { width:10px; height:10px; border-radius:50%; border:1.5px solid rgba(255,255,255,.3); flex-shrink:0; }
-  .drawer { background:var(--green-dark); border-top:2px solid var(--green-light); flex-shrink:0; z-index:10; }
-  .drawer-handle { display:flex; align-items:center; justify-content:space-between; padding:8px 14px; cursor:pointer; user-select:none; }
-  .drawer-title { font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--tan); }
-  .drawer-toggle { font-size:14px; color:var(--green-accent); transition:transform .2s; display:inline-block; }
-  .drawer.open .drawer-toggle { transform:rotate(180deg); }
-  .drawer-body { display:none; padding:0 14px 12px; max-height:250px; overflow-y:auto; -webkit-overflow-scrolling:touch; }
-  .drawer.open .drawer-body { display:block; }
-  .site-list { margin-top:4px; }
-  .site-item { background:var(--green-mid); border-radius:5px; padding:9px 11px; margin-bottom:7px; display:flex; align-items:center; gap:10px; border-left:4px solid var(--gray); cursor:pointer; }
-  .site-item.fresh { border-left-color:var(--red); }
-  .site-item.aging { border-left-color:var(--yellow); }
-  .site-item.old { border-left-color:var(--gray); }
-  .site-item.archived { opacity:.5; }
-  .site-info { flex:1; min-width:0; }
-  .site-name { font-size:13px; color:var(--cream); font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .site-meta { font-size:10px; color:var(--tan); margin-top:2px; }
-  .app-log-item { background:var(--green-mid); border-radius:5px; padding:9px 11px; margin-bottom:7px; display:flex; align-items:center; gap:10px; border-left:4px solid var(--green-accent); cursor:pointer; }
-  .app-log-item.compliance-logged { border-left-color:var(--archived); opacity:.55; }
-  .log-info { flex:1; min-width:0; }
-  .log-name { font-size:13px; color:var(--cream); font-weight:bold; }
-  .log-meta { font-size:10px; color:var(--tan); margin-top:2px; }
-  .empty-state { text-align:center; padding:20px; color:var(--green-accent); font-size:12px; letter-spacing:.06em; text-transform:uppercase; }
-  .csv-row { display:flex; gap:8px; margin-top:8px; }
-  .chip { display:inline-block; border-radius:3px; padding:2px 6px; font-size:9px; letter-spacing:.06em; text-transform:uppercase; font-weight:bold; white-space:nowrap; flex-shrink:0; }
-  .chip-red { background:var(--red); color:#fff; }
-  .chip-yellow { background:var(--yellow); color:#fff; }
-  .chip-gray { background:var(--gray); color:#fff; }
-  .chip-green { background:var(--green-accent); color:#fff; }
-  .chip-archived { background:var(--archived); color:#fff; }
-  .form-row { display:flex; gap:8px; margin-bottom:8px; }
-  .form-group { flex:1; display:flex; flex-direction:column; gap:3px; }
-  label { font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--tan); }
-  input, select, textarea { background:var(--green-mid); border:1px solid var(--green-light); border-radius:4px; color:var(--cream); font-size:16px; padding:7px 8px; font-family:inherit; width:100%; -webkit-appearance:none; appearance:none; }
-  input::placeholder, textarea::placeholder { color:var(--green-accent); font-size:14px; }
-  textarea { resize:none; height:52px; }
-  .btn { border:none; border-radius:5px; font-family:Georgia,serif; font-size:12px; letter-spacing:.06em; cursor:pointer; padding:10px 14px; text-transform:uppercase; transition:filter .15s, transform .1s; }
-  .btn:active { transform:scale(.97); filter:brightness(.9); }
-  .btn-primary { background:var(--green-accent); color:#fff; }
-  .btn-warn { background:var(--orange); color:#fff; }
-  .btn-danger { background:var(--red); color:#fff; }
-  .btn-ghost { background:transparent; border:1px solid var(--green-accent); color:var(--green-accent); }
-  .btn-sm { padding:6px 10px; font-size:11px; }
-  .btn-row { display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; }
-  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.65); z-index:2000; align-items:flex-end; justify-content:center; }
-  .modal-overlay.open { display:flex; }
-  .modal { background:var(--green-dark); border-top:2px solid var(--green-light); border-radius:16px 16px 0 0; width:100%; max-width:640px; padding:20px 18px; padding-bottom:max(24px, env(safe-area-inset-bottom)); max-height:92dvh; overflow-y:auto; -webkit-overflow-scrolling:touch; }
-  .modal-title { font-size:14px; letter-spacing:.1em; text-transform:uppercase; color:var(--tan); margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid var(--green-mid); }
-  .tab-count { display:inline-block; background:var(--red); color:#fff; border-radius:10px; font-size:9px; padding:1px 5px; margin-left:4px; vertical-align:middle; font-weight:bold; min-width:16px; text-align:center; }
-  .tab.active .tab-count { background:var(--green-light); }
-  .gps-dot { display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--green-accent); margin-right:5px; animation:pulse 1.8s infinite; }
-  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.35;transform:scale(.65)} }
-  .detail-table { width:100%; font-size:12px; border-collapse:collapse; }
-  .detail-table td { padding:5px 6px 5px 0; vertical-align:top; }
-  .detail-table td:first-child { color:var(--tan); font-size:10px; text-transform:uppercase; letter-spacing:.05em; white-space:nowrap; padding-right:10px; width:1%; }
-  .detail-table td:last-child { color:var(--cream); }
+  :root{--green-dark:#1a2e1a;--green-mid:#2d4a2d;--green-light:#3d6b3d;--green-accent:#5a9e5a;--tan:#c8b89a;--cream:#f4f0e8;--red:#c0392b;--orange:#e07b28;--yellow:#c8960a;--gray:#7a7a7a;--archived:#9b9b9b;--white:#ffffff;}
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  html{height:100%;}
+  body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:Georgia,serif;background:var(--green-dark);color:var(--cream);display:flex;flex-direction:column;}
+  header{background:var(--green-dark);padding:10px 16px 0;flex-shrink:0;border-bottom:2px solid var(--green-light);padding-top:max(10px,env(safe-area-inset-top));}
+  .header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  .app-title{font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--tan);}
+  .app-subtitle{font-size:10px;color:var(--green-accent);letter-spacing:.08em;text-transform:uppercase;margin-top:1px;}
+  .header-right{display:flex;align-items:center;gap:8px;}
+  .header-badge{background:var(--green-mid);border:1px solid var(--green-accent);border-radius:4px;padding:4px 8px;font-size:10px;color:var(--tan);letter-spacing:.06em;}
+  .sync-btn{background:var(--green-mid);border:1px solid var(--green-accent);border-radius:4px;padding:4px 10px;font-size:10px;color:var(--tan);letter-spacing:.06em;cursor:pointer;text-transform:uppercase;font-family:Georgia,serif;transition:background .15s;}
+  .sync-btn:hover{background:var(--green-light);}
+  .sync-btn.signed-in{border-color:var(--green-accent);color:var(--green-accent);}
+  .sync-btn.syncing{color:var(--yellow);border-color:var(--yellow);}
+  .sync-btn.error{color:var(--red);border-color:var(--red);}
+  .tabs{display:flex;gap:2px;}
+  .tab{flex:1;padding:8px 4px;text-align:center;font-size:11px;letter-spacing:.07em;text-transform:uppercase;cursor:pointer;border-radius:4px 4px 0 0;color:var(--tan);background:var(--green-mid);border:1px solid transparent;border-bottom:none;user-select:none;}
+  .tab.active{background:var(--cream);color:var(--green-dark);border-color:var(--tan);font-weight:bold;}
+  .panel{display:none;flex:1;flex-direction:column;overflow:hidden;background:var(--cream);min-height:0;}
+  .panel.active{display:flex;}
+  .map-wrap{position:relative;flex:1;min-height:0;overflow:hidden;}
+  .leaflet-container{position:absolute !important;inset:0;width:100% !important;height:100% !important;}
+  .map-tap-hint{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);background:rgba(26,46,26,.88);color:var(--tan);padding:6px 14px;border-radius:20px;font-size:11px;letter-spacing:.06em;pointer-events:none;z-index:500;white-space:nowrap;border:1px solid var(--green-light);}
+  .locate-btn{position:absolute;top:10px;right:10px;z-index:500;background:var(--green-dark);border:1.5px solid var(--green-light);color:var(--tan);border-radius:6px;padding:8px 11px;font-size:16px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.3);}
+  .layer-btn{position:absolute;top:10px;left:10px;z-index:500;background:var(--green-dark);border:1.5px solid var(--green-light);color:var(--tan);border-radius:6px;padding:6px 10px;font-size:10px;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.3);}
+  .legend{display:flex;gap:10px;flex-wrap:wrap;padding:6px 14px;background:var(--green-dark);border-top:1px solid var(--green-mid);flex-shrink:0;}
+  .legend-item{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--tan);}
+  .legend-dot{width:10px;height:10px;border-radius:50%;border:1.5px solid rgba(255,255,255,.3);flex-shrink:0;}
+  .drawer{background:var(--green-dark);border-top:2px solid var(--green-light);flex-shrink:0;z-index:10;}
+  .drawer-handle{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;cursor:pointer;user-select:none;}
+  .drawer-title{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--tan);}
+  .drawer-toggle{font-size:14px;color:var(--green-accent);transition:transform .2s;display:inline-block;}
+  .drawer.open .drawer-toggle{transform:rotate(180deg);}
+  .drawer-body{display:none;padding:0 14px 12px;max-height:250px;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+  .drawer.open .drawer-body{display:block;}
+  .site-list{margin-top:4px;}
+  .site-item{background:var(--green-mid);border-radius:5px;padding:9px 11px;margin-bottom:7px;display:flex;align-items:center;gap:10px;border-left:4px solid var(--gray);cursor:pointer;}
+  .site-item.fresh{border-left-color:var(--red);}
+  .site-item.aging{border-left-color:var(--yellow);}
+  .site-item.old{border-left-color:var(--gray);}
+  .site-item.archived{opacity:.5;}
+  .site-info{flex:1;min-width:0;}
+  .site-name{font-size:13px;color:var(--cream);font-weight:bold;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .site-meta{font-size:10px;color:var(--tan);margin-top:2px;}
+  .app-log-item{background:var(--green-mid);border-radius:5px;padding:9px 11px;margin-bottom:7px;display:flex;align-items:center;gap:10px;border-left:4px solid var(--green-accent);cursor:pointer;}
+  .app-log-item.compliance-logged{border-left-color:var(--archived);opacity:.55;}
+  .log-info{flex:1;min-width:0;}
+  .log-name{font-size:13px;color:var(--cream);font-weight:bold;}
+  .log-meta{font-size:10px;color:var(--tan);margin-top:2px;}
+  .empty-state{text-align:center;padding:20px;color:var(--green-accent);font-size:12px;letter-spacing:.06em;text-transform:uppercase;}
+  .csv-row{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}
+  .chip{display:inline-block;border-radius:3px;padding:2px 6px;font-size:9px;letter-spacing:.06em;text-transform:uppercase;font-weight:bold;white-space:nowrap;flex-shrink:0;}
+  .chip-red{background:var(--red);color:#fff;}
+  .chip-yellow{background:var(--yellow);color:#fff;}
+  .chip-gray{background:var(--gray);color:#fff;}
+  .chip-green{background:var(--green-accent);color:#fff;}
+  .chip-archived{background:var(--archived);color:#fff;}
+  .form-row{display:flex;gap:8px;margin-bottom:8px;}
+  .form-group{flex:1;display:flex;flex-direction:column;gap:3px;}
+  label{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--tan);}
+  input,select,textarea{background:var(--green-mid);border:1px solid var(--green-light);border-radius:4px;color:var(--cream);font-size:16px;padding:7px 8px;font-family:inherit;width:100%;-webkit-appearance:none;appearance:none;}
+  input::placeholder,textarea::placeholder{color:var(--green-accent);font-size:14px;}
+  textarea{resize:none;height:52px;}
+  .btn{border:none;border-radius:5px;font-family:Georgia,serif;font-size:12px;letter-spacing:.06em;cursor:pointer;padding:10px 14px;text-transform:uppercase;transition:filter .15s,transform .1s;}
+  .btn:active{transform:scale(.97);filter:brightness(.9);}
+  .btn-primary{background:var(--green-accent);color:#fff;}
+  .btn-warn{background:var(--orange);color:#fff;}
+  .btn-danger{background:var(--red);color:#fff;}
+  .btn-ghost{background:transparent;border:1px solid var(--green-accent);color:var(--green-accent);}
+  .btn-sm{padding:6px 10px;font-size:11px;}
+  .btn-row{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;}
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:2000;align-items:flex-end;justify-content:center;}
+  .modal-overlay.open{display:flex;}
+  .modal{background:var(--green-dark);border-top:2px solid var(--green-light);border-radius:16px 16px 0 0;width:100%;max-width:640px;padding:20px 18px;padding-bottom:max(24px,env(safe-area-inset-bottom));max-height:92dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+  .modal-title{font-size:14px;letter-spacing:.1em;text-transform:uppercase;color:var(--tan);margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--green-mid);}
+  .tab-count{display:inline-block;background:var(--red);color:#fff;border-radius:10px;font-size:9px;padding:1px 5px;margin-left:4px;vertical-align:middle;font-weight:bold;min-width:16px;text-align:center;}
+  .tab.active .tab-count{background:var(--green-light);}
+  .gps-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green-accent);margin-right:5px;animation:pulse 1.8s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.65)}}
+  .detail-table{width:100%;font-size:12px;border-collapse:collapse;}
+  .detail-table td{padding:5px 6px 5px 0;vertical-align:top;}
+  .detail-table td:first-child{color:var(--tan);font-size:10px;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;padding-right:10px;width:1%;}
+  .detail-table td:last-child{color:var(--cream);}
+  .toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--green-mid);border:1px solid var(--green-accent);color:var(--cream);padding:8px 18px;border-radius:20px;font-size:12px;letter-spacing:.05em;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;}
+  .toast.show{opacity:1;}
 </style>
 </head>
 <body>
 <header>
   <div class="header-top">
     <div><div class="app-title">UMW Grounds</div><div class="app-subtitle">Weed &amp; Herbicide Tracker</div></div>
-    <div class="header-badge"><span class="gps-dot"></span><span id="header-date"></span></div>
+    <div class="header-right">
+      <button class="sync-btn" id="sync-btn" onclick="handleSyncClick()">☁ Sign In</button>
+      <div class="header-badge"><span class="gps-dot"></span><span id="header-date"></span></div>
+    </div>
   </div>
   <div class="tabs">
     <div class="tab active" id="tab-scout" onclick="switchTab('scout')">🌿 Weed Scouting <span class="tab-count" id="scout-count">0</span></div>
@@ -131,7 +131,7 @@
       <div class="site-list" id="scout-list"><div class="empty-state">No sites flagged yet</div></div>
       <div class="csv-row">
         <button class="btn btn-ghost btn-sm" onclick="exportCSV('scout')" style="flex:1">⬇ Export</button>
-        <button class="btn btn-ghost btn-sm" onclick="triggerImport('scout')" style="flex:1">⬆ Import CSV</button>
+        <button class="btn btn-ghost btn-sm" onclick="triggerImport('scout')" style="flex:1">⬆ Import</button>
         <button class="btn btn-ghost btn-sm" onclick="showArchived('scout')" style="flex:1">📁 Archived</button>
       </div>
       <input type="file" id="import-scout" accept=".csv" style="display:none" onchange="importCSV(event,'scout')">
@@ -155,7 +155,7 @@
       <div class="site-list" id="herb-list"><div class="empty-state">No applications logged yet</div></div>
       <div class="csv-row">
         <button class="btn btn-ghost btn-sm" onclick="exportCSV('herb')" style="flex:1">⬇ Export</button>
-        <button class="btn btn-ghost btn-sm" onclick="triggerImport('herb')" style="flex:1">⬆ Import CSV</button>
+        <button class="btn btn-ghost btn-sm" onclick="triggerImport('herb')" style="flex:1">⬆ Import</button>
         <button class="btn btn-ghost btn-sm" onclick="showArchived('herb')" style="flex:1">📁 Archived</button>
       </div>
       <input type="file" id="import-herb" accept=".csv" style="display:none" onchange="importCSV(event,'herb')">
@@ -216,40 +216,36 @@
     <div class="btn-row" style="margin-top:12px;"><button class="btn btn-ghost" style="flex:1" onclick="closeModal('modal-archived')">Close</button></div>
   </div>
 </div>
+<div class="toast" id="toast"></div>
 <script>
+const GOOG_CLIENT_ID='890777241821-dt139ab7vhm8kt68vd1hfhi3163frk0j.apps.googleusercontent.com';
+const GOOG_API_KEY='AIzaSyAscphLQ9Pef0O6LUoX5i2GcJmDcqKWAGM';
+const DRIVE_SCOPES='https://www.googleapis.com/auth/drive.appdata';
+const DRIVE_FILE='umw_tracker_data.json';
+const MBKEY='pk.eyJ1IjoiamtjYXJlYXR0aSIsImEiOiJjbW5lcWpqMHkwMmg5MndvcHJldWNnY3piIn0.7aenv95oURdZS1BJltGZfQ';
+const STREET_URL=`https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/{z}/{x}/{y}?access_token=${MBKEY}`;
+const STREET_OPT={attribution:'© <a href="https://www.mapbox.com/">Mapbox</a>',tileSize:512,zoomOffset:-1,maxZoom:22};
+const SAT_URL=`https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/{z}/{x}/{y}?access_token=${MBKEY}`;
+const SAT_OPT={attribution:'© <a href="https://www.mapbox.com/">Mapbox</a>',tileSize:512,zoomOffset:-1,maxZoom:22};
 const state={scout:[],herb:[]};
 let tempLatLng=null,scoutMap,herbMap,scoutMarkers={},herbMarkers={};
 let scoutSatOn=false,herbSatOn=false,scoutStreet,scoutSat,herbStreet,herbSat;
-const MBKEY='pk.eyJ1IjoiamtjYXJlYXR0aSIsImEiOiJjbW5lcWpqMHkwMmg5MndvcHJldWNnY3piIn0.7aenv95oURdZS1BJltGZfQ';
-const STREET_URL=`https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/{z}/{x}/{y}?access_token=${MBKEY}`;
-const STREET_OPT={attribution:'© <a href="https://www.mapbox.com/">Mapbox</a> © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',tileSize:512,zoomOffset:-1,maxZoom:22};
-const SAT_URL=`https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/{z}/{x}/{y}?access_token=${MBKEY}`;
-const SAT_OPT={attribution:'© <a href="https://www.mapbox.com/">Mapbox</a>',tileSize:512,zoomOffset:-1,maxZoom:22};
+let tokenClient=null,accessToken=null,driveFileId=null,gapiReady=false,gsiReady=false;
 document.getElementById('header-date').textContent=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-function initMaps(){
-  const C=[38.3012,-77.4756],Z=17;
-  scoutMap=L.map('scout-map',{zoomControl:true,tap:true}).setView(C,Z);
-  scoutStreet=L.tileLayer(STREET_URL,STREET_OPT).addTo(scoutMap);
-  scoutSat=L.tileLayer(SAT_URL,SAT_OPT);
-  scoutMap.on('click',e=>{tempLatLng=e.latlng;clearScoutForm();openModal('modal-scout');});
-  herbMap=L.map('herb-map',{zoomControl:true,tap:true}).setView(C,Z);
-  herbStreet=L.tileLayer(STREET_URL,STREET_OPT).addTo(herbMap);
-  herbSat=L.tileLayer(SAT_URL,SAT_OPT);
-  herbMap.on('click',e=>{tempLatLng=e.latlng;clearHerbForm();openModal('modal-herb');});
-  setTimeout(()=>{scoutMap.invalidateSize({pan:false});herbMap.invalidateSize({pan:false});},200);
-  window.addEventListener('resize',()=>{scoutMap.invalidateSize({pan:false});herbMap.invalidateSize({pan:false});});
-}
-function toggleLayer(tab){
-  if(tab==='scout'){scoutSatOn=!scoutSatOn;if(scoutSatOn){scoutMap.removeLayer(scoutStreet);scoutSat.addTo(scoutMap);document.getElementById('scout-layer-btn').textContent='🗺 Street';}else{scoutMap.removeLayer(scoutSat);scoutStreet.addTo(scoutMap);document.getElementById('scout-layer-btn').textContent='🛰 Satellite';}}
-  else{herbSatOn=!herbSatOn;if(herbSatOn){herbMap.removeLayer(herbStreet);herbSat.addTo(herbMap);document.getElementById('herb-layer-btn').textContent='🗺 Street';}else{herbMap.removeLayer(herbSat);herbStreet.addTo(herbMap);document.getElementById('herb-layer-btn').textContent='🛰 Satellite';}}
-}
-function switchTab(tab){
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
-  document.getElementById('tab-'+tab).classList.add('active');
-  document.getElementById('panel-'+tab).classList.add('active');
-  setTimeout(()=>(tab==='scout'?scoutMap:herbMap).invalidateSize({pan:false}),80);
-}
+function initMaps(){const C=[38.3012,-77.4756],Z=17;scoutMap=L.map('scout-map',{zoomControl:true,tap:true}).setView(C,Z);scoutStreet=L.tileLayer(STREET_URL,STREET_OPT).addTo(scoutMap);scoutSat=L.tileLayer(SAT_URL,SAT_OPT);scoutMap.on('click',e=>{tempLatLng=e.latlng;clearScoutForm();openModal('modal-scout');});herbMap=L.map('herb-map',{zoomControl:true,tap:true}).setView(C,Z);herbStreet=L.tileLayer(STREET_URL,STREET_OPT).addTo(herbMap);herbSat=L.tileLayer(SAT_URL,SAT_OPT);herbMap.on('click',e=>{tempLatLng=e.latlng;clearHerbForm();openModal('modal-herb');});setTimeout(()=>{scoutMap.invalidateSize({pan:false});herbMap.invalidateSize({pan:false});},200);window.addEventListener('resize',()=>{scoutMap.invalidateSize({pan:false});herbMap.invalidateSize({pan:false});});}
+function initGapi(){gapi.load('client',async()=>{await gapi.client.init({apiKey:GOOG_API_KEY,discoveryDocs:['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']});gapiReady=true;tryAutoLoad();});}
+function initGsi(){tokenClient=google.accounts.oauth2.initTokenClient({client_id:GOOG_CLIENT_ID,scope:DRIVE_SCOPES,callback:(resp)=>{if(resp.error){setSyncBtn('error','☁ Error');return;}accessToken=resp.access_token;gapi.client.setToken({access_token:accessToken});setSyncBtn('signed-in','⟳ Sync Now');syncFromDrive();}});gsiReady=true;tryAutoLoad();}
+function tryAutoLoad(){if(gapiReady&&gsiReady){const hint=localStorage.getItem('umw_gdrive_hint');if(hint)tokenClient.requestAccessToken({prompt:'none',login_hint:hint});}}
+function handleSyncClick(){if(!gapiReady||!gsiReady){showToast('Google API still loading, try again');return;}if(accessToken){syncFromDrive();}else{tokenClient.requestAccessToken({prompt:'consent'});}}
+function setSyncBtn(cls,text){const b=document.getElementById('sync-btn');b.className='sync-btn'+(cls?' '+cls:'');b.textContent=text;}
+async function syncFromDrive(){setSyncBtn('syncing','⟳ Syncing…');try{const list=await gapi.client.drive.files.list({spaces:'appDataFolder',q:`name='${DRIVE_FILE}'`,fields:'files(id,name)'});const files=list.result.files;if(files&&files.length>0){driveFileId=files[0].id;const resp=await gapi.client.drive.files.get({fileId:driveFileId,alt:'media'});const remote=JSON.parse(resp.body);mergeRemote(remote);}await pushToDrive();setSyncBtn('signed-in','✓ Synced');showToast('Sync complete');const hint=await getLoginHint();if(hint)localStorage.setItem('umw_gdrive_hint',hint);}catch(e){console.error('Sync error',e);setSyncBtn('error','☁ Sync Failed');showToast('Sync failed — check connection');}}
+async function pushToDrive(){const body=JSON.stringify({scout:state.scout,herb:state.herb});if(driveFileId){await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`,{method:'PATCH',headers:{'Authorization':'Bearer '+accessToken,'Content-Type':'application/json'},body});}else{const meta={name:DRIVE_FILE,parents:['appDataFolder']};const form=new FormData();form.append('metadata',new Blob([JSON.stringify(meta)],{type:'application/json'}));form.append('file',new Blob([body],{type:'application/json'}));const r=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',{method:'POST',headers:{'Authorization':'Bearer '+accessToken},body:form});const data=await r.json();driveFileId=data.id;}}
+function mergeRemote(remote){if(remote.scout)remote.scout.forEach(rs=>{if(!state.scout.find(ls=>ls.id===rs.id)){state.scout.push(rs);addScoutMarker(rs);}});if(remote.herb)remote.herb.forEach(ra=>{if(!state.herb.find(la=>la.id===ra.id)){state.herb.push(ra);addHerbMarker(ra);}});persist();renderScoutList();renderHerbList();updateCounts();}
+async function getLoginHint(){try{const r=await gapi.client.request({path:'https://www.googleapis.com/oauth2/v3/userinfo'});return r.result.email||null;}catch(e){return null;}}
+function syncAfterSave(){if(accessToken){setSyncBtn('syncing','⟳ Saving…');pushToDrive().then(()=>setSyncBtn('signed-in','✓ Synced')).catch(()=>setSyncBtn('error','☁ Save Failed'));}}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
+function toggleLayer(tab){if(tab==='scout'){scoutSatOn=!scoutSatOn;if(scoutSatOn){scoutMap.removeLayer(scoutStreet);scoutSat.addTo(scoutMap);document.getElementById('scout-layer-btn').textContent='🗺 Street';}else{scoutMap.removeLayer(scoutSat);scoutStreet.addTo(scoutMap);document.getElementById('scout-layer-btn').textContent='🛰 Satellite';}}else{herbSatOn=!herbSatOn;if(herbSatOn){herbMap.removeLayer(herbStreet);herbSat.addTo(herbMap);document.getElementById('herb-layer-btn').textContent='🗺 Street';}else{herbMap.removeLayer(herbSat);herbStreet.addTo(herbMap);document.getElementById('herb-layer-btn').textContent='🛰 Satellite';}}}
+function switchTab(tab){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));document.getElementById('tab-'+tab).classList.add('active');document.getElementById('panel-'+tab).classList.add('active');setTimeout(()=>(tab==='scout'?scoutMap:herbMap).invalidateSize({pan:false}),80);}
 function toggleDrawer(id){document.getElementById(id).classList.toggle('open');}
 function openModal(id){document.getElementById(id).classList.add('open');}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
@@ -258,18 +254,18 @@ function ageLabel(d){const x=Math.floor((Date.now()-new Date(d))/86400000);retur
 function chipAge(d){const m={fresh:['chip-red','<7 d'],aging:['chip-yellow','7–30 d'],old:['chip-gray','>30 d']};const[c,l]=m[ageClass(d)];return`<span class="chip ${c}">${l}</span>`;}
 function weedIcon(ageC,archived){const cols={fresh:'#c0392b',aging:'#c8960a',old:'#7a7a7a'};const col=archived?'#9b9b9b':(cols[ageC]||'#7a7a7a');const op=archived?'0.5':'1';return L.divIcon({className:'',iconSize:[24,24],iconAnchor:[12,24],popupAnchor:[0,-26],html:`<div style="width:24px;height:24px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:${col};border:2.5px solid rgba(255,255,255,.75);box-shadow:0 2px 6px rgba(0,0,0,.4);opacity:${op}"></div>`});}
 function herbIcon(dimmed){const col=dimmed?'#9b9b9b':'#5a9e5a';const op=dimmed?'0.55':'1';return L.divIcon({className:'',iconSize:[22,22],iconAnchor:[11,11],popupAnchor:[0,-14],html:`<div style="width:22px;height:22px;border-radius:4px;transform:rotate(45deg);background:${col};border:2.5px solid rgba(255,255,255,.75);box-shadow:0 2px 6px rgba(0,0,0,.4);opacity:${op}"></div>`});}
-function saveScoutSite(){if(!tempLatLng){alert('No location captured.');return;}const s={id:Date.now(),name:v('scout-name')||'Unnamed site',species:v('scout-species'),density:v('scout-density'),treatment:v('scout-treatment'),notes:v('scout-notes'),lat:tempLatLng.lat,lng:tempLatLng.lng,date:new Date().toISOString(),archived:false};state.scout.push(s);persist();addScoutMarker(s);renderScoutList();updateCounts();closeModal('modal-scout');}
+function saveScoutSite(){if(!tempLatLng){alert('No location captured.');return;}const s={id:Date.now(),name:v('scout-name')||'Unnamed site',species:v('scout-species'),density:v('scout-density'),treatment:v('scout-treatment'),notes:v('scout-notes'),lat:tempLatLng.lat,lng:tempLatLng.lng,date:new Date().toISOString(),archived:false};state.scout.push(s);persist();addScoutMarker(s);renderScoutList();updateCounts();closeModal('modal-scout');syncAfterSave();}
 function clearScoutForm(){['scout-name','scout-species','scout-treatment','scout-notes'].forEach(id=>document.getElementById(id).value='');document.getElementById('scout-density').value='Light';}
 function addScoutMarker(s){const m=L.marker([s.lat,s.lng],{icon:weedIcon(ageClass(s.date),s.archived)});m.on('click',()=>showScoutDetail(s.id));m.addTo(scoutMap);scoutMarkers[s.id]=m;}
 function refreshScoutIcon(s){const m=scoutMarkers[s.id];if(m)m.setIcon(weedIcon(ageClass(s.date),s.archived));}
-function saveHerbApp(){if(!tempLatLng){alert('No location captured.');return;}const a={id:Date.now(),name:v('herb-name')||'Unnamed site',product:v('herb-product'),epa:v('herb-epa'),method:v('herb-method'),volume:v('herb-volume'),rate:v('herb-rate'),target:v('herb-target'),applicator:v('herb-applicator'),notes:v('herb-notes'),lat:tempLatLng.lat,lng:tempLatLng.lng,date:new Date().toISOString(),complianceLogged:false,archived:false};state.herb.push(a);persist();addHerbMarker(a);renderHerbList();updateCounts();closeModal('modal-herb');}
+function saveHerbApp(){if(!tempLatLng){alert('No location captured.');return;}const a={id:Date.now(),name:v('herb-name')||'Unnamed site',product:v('herb-product'),epa:v('herb-epa'),method:v('herb-method'),volume:v('herb-volume'),rate:v('herb-rate'),target:v('herb-target'),applicator:v('herb-applicator'),notes:v('herb-notes'),lat:tempLatLng.lat,lng:tempLatLng.lng,date:new Date().toISOString(),complianceLogged:false,archived:false};state.herb.push(a);persist();addHerbMarker(a);renderHerbList();updateCounts();closeModal('modal-herb');syncAfterSave();}
 function clearHerbForm(){['herb-name','herb-product','herb-epa','herb-volume','herb-rate','herb-target','herb-applicator','herb-notes'].forEach(id=>document.getElementById(id).value='');}
 function addHerbMarker(a){const m=L.marker([a.lat,a.lng],{icon:herbIcon(a.complianceLogged||a.archived)});m.on('click',()=>showHerbDetail(a.id));m.addTo(herbMap);herbMarkers[a.id]=m;}
 function refreshHerbIcon(a){const m=herbMarkers[a.id];if(m)m.setIcon(herbIcon(a.complianceLogged||a.archived));}
-function showScoutDetail(id){const s=state.scout.find(x=>x.id===id);if(!s)return;document.getElementById('detail-title').textContent='🌿 '+s.name;document.getElementById('detail-body').innerHTML=`<div style="margin-bottom:10px">${chipAge(s.date)}${s.archived?'<span class="chip chip-archived" style="margin-left:5px">Archived</span>':''}</div><table class="detail-table">${tr('Flagged',fmt(s.date)+' ('+ageLabel(s.date)+')')}${tr('Species',s.species||'—')}${tr('Density',s.density)}${tr('Treatment',s.treatment||'—')}${tr('Coords',s.lat.toFixed(5)+', '+s.lng.toFixed(5))}${s.notes?tr('Notes',s.notes):''}</table>`;const acts=document.getElementById('detail-actions');acts.innerHTML='';if(!s.archived){mkbtn(acts,'📁 Archive','btn-warn btn-sm',()=>{s.archived=true;persist();refreshScoutIcon(s);renderScoutList();updateCounts();closeModal('modal-detail');});mkbtn(acts,'🗑 Delete','btn-danger btn-sm',()=>delScout(id));}else{mkbtn(acts,'↩ Restore','btn-ghost btn-sm',()=>{s.archived=false;persist();refreshScoutIcon(s);renderScoutList();updateCounts();closeModal('modal-detail');closeModal('modal-archived');});}mkbtn(acts,'Close','btn-ghost btn-sm',()=>closeModal('modal-detail'),true);openModal('modal-detail');}
-function delScout(id){if(!confirm('Delete permanently?'))return;state.scout=state.scout.filter(s=>s.id!==id);if(scoutMarkers[id]){scoutMap.removeLayer(scoutMarkers[id]);delete scoutMarkers[id];}persist();renderScoutList();updateCounts();closeModal('modal-detail');}
-function showHerbDetail(id){const a=state.herb.find(x=>x.id===id);if(!a)return;document.getElementById('detail-title').textContent='🧪 '+a.name;document.getElementById('detail-body').innerHTML=`<div style="margin-bottom:10px"><span class="chip ${a.complianceLogged?'chip-archived':'chip-green'}">${a.complianceLogged?'Compliance Filed':'Pending Compliance'}</span>${a.archived?'<span class="chip chip-archived" style="margin-left:5px">Archived</span>':''}</div><table class="detail-table">${tr('Date',fmt(a.date))}${tr('Product',a.product||'—')}${tr('EPA Reg #',a.epa||'—')}${tr('Method',a.method)}${tr('Volume',a.volume||'—')}${tr('Mix Rate',a.rate||'—')}${tr('Target',a.target||'—')}${tr('Applicator',a.applicator||'—')}${tr('Coords',a.lat.toFixed(5)+', '+a.lng.toFixed(5))}${a.notes?tr('Notes',a.notes):''}</table>`;const acts=document.getElementById('detail-actions');acts.innerHTML='';if(!a.archived){if(!a.complianceLogged)mkbtn(acts,'✅ Compliance Filed','btn-primary btn-sm',()=>{a.complianceLogged=true;persist();refreshHerbIcon(a);renderHerbList();updateCounts();closeModal('modal-detail');});mkbtn(acts,'📁 Archive','btn-warn btn-sm',()=>{a.archived=true;persist();refreshHerbIcon(a);renderHerbList();updateCounts();closeModal('modal-detail');});mkbtn(acts,'🗑 Delete','btn-danger btn-sm',()=>delHerb(id));}else{mkbtn(acts,'↩ Restore','btn-ghost btn-sm',()=>{a.archived=false;persist();refreshHerbIcon(a);renderHerbList();updateCounts();closeModal('modal-detail');closeModal('modal-archived');});}mkbtn(acts,'Close','btn-ghost btn-sm',()=>closeModal('modal-detail'),true);openModal('modal-detail');}
-function delHerb(id){if(!confirm('Delete permanently?'))return;state.herb=state.herb.filter(a=>a.id!==id);if(herbMarkers[id]){herbMap.removeLayer(herbMarkers[id]);delete herbMarkers[id];}persist();renderHerbList();updateCounts();closeModal('modal-detail');}
+function showScoutDetail(id){const s=state.scout.find(x=>x.id===id);if(!s)return;document.getElementById('detail-title').textContent='🌿 '+s.name;document.getElementById('detail-body').innerHTML=`<div style="margin-bottom:10px">${chipAge(s.date)}${s.archived?'<span class="chip chip-archived" style="margin-left:5px">Archived</span>':''}</div><table class="detail-table">${tr('Flagged',fmt(s.date)+' ('+ageLabel(s.date)+')')}${tr('Species',s.species||'—')}${tr('Density',s.density)}${tr('Treatment',s.treatment||'—')}${tr('Coords',s.lat.toFixed(5)+', '+s.lng.toFixed(5))}${s.notes?tr('Notes',s.notes):''}</table>`;const acts=document.getElementById('detail-actions');acts.innerHTML='';if(!s.archived){mkbtn(acts,'📁 Archive','btn-warn btn-sm',()=>{s.archived=true;persist();refreshScoutIcon(s);renderScoutList();updateCounts();closeModal('modal-detail');syncAfterSave();});mkbtn(acts,'🗑 Delete','btn-danger btn-sm',()=>delScout(id));}else{mkbtn(acts,'↩ Restore','btn-ghost btn-sm',()=>{s.archived=false;persist();refreshScoutIcon(s);renderScoutList();updateCounts();closeModal('modal-detail');closeModal('modal-archived');syncAfterSave();});}mkbtn(acts,'Close','btn-ghost btn-sm',()=>closeModal('modal-detail'),true);openModal('modal-detail');}
+function delScout(id){if(!confirm('Delete permanently?'))return;state.scout=state.scout.filter(s=>s.id!==id);if(scoutMarkers[id]){scoutMap.removeLayer(scoutMarkers[id]);delete scoutMarkers[id];}persist();renderScoutList();updateCounts();closeModal('modal-detail');syncAfterSave();}
+function showHerbDetail(id){const a=state.herb.find(x=>x.id===id);if(!a)return;document.getElementById('detail-title').textContent='🧪 '+a.name;document.getElementById('detail-body').innerHTML=`<div style="margin-bottom:10px"><span class="chip ${a.complianceLogged?'chip-archived':'chip-green'}">${a.complianceLogged?'Compliance Filed':'Pending Compliance'}</span>${a.archived?'<span class="chip chip-archived" style="margin-left:5px">Archived</span>':''}</div><table class="detail-table">${tr('Date',fmt(a.date))}${tr('Product',a.product||'—')}${tr('EPA Reg #',a.epa||'—')}${tr('Method',a.method)}${tr('Volume',a.volume||'—')}${tr('Mix Rate',a.rate||'—')}${tr('Target',a.target||'—')}${tr('Applicator',a.applicator||'—')}${tr('Coords',a.lat.toFixed(5)+', '+a.lng.toFixed(5))}${a.notes?tr('Notes',a.notes):''}</table>`;const acts=document.getElementById('detail-actions');acts.innerHTML='';if(!a.archived){if(!a.complianceLogged)mkbtn(acts,'✅ Compliance Filed','btn-primary btn-sm',()=>{a.complianceLogged=true;persist();refreshHerbIcon(a);renderHerbList();updateCounts();closeModal('modal-detail');syncAfterSave();});mkbtn(acts,'📁 Archive','btn-warn btn-sm',()=>{a.archived=true;persist();refreshHerbIcon(a);renderHerbList();updateCounts();closeModal('modal-detail');syncAfterSave();});mkbtn(acts,'🗑 Delete','btn-danger btn-sm',()=>delHerb(id));}else{mkbtn(acts,'↩ Restore','btn-ghost btn-sm',()=>{a.archived=false;persist();refreshHerbIcon(a);renderHerbList();updateCounts();closeModal('modal-detail');closeModal('modal-archived');syncAfterSave();});}mkbtn(acts,'Close','btn-ghost btn-sm',()=>closeModal('modal-detail'),true);openModal('modal-detail');}
+function delHerb(id){if(!confirm('Delete permanently?'))return;state.herb=state.herb.filter(a=>a.id!==id);if(herbMarkers[id]){herbMap.removeLayer(herbMarkers[id]);delete herbMarkers[id];}persist();renderHerbList();updateCounts();closeModal('modal-detail');syncAfterSave();}
 function renderScoutList(){const el=document.getElementById('scout-list');const items=state.scout.filter(s=>!s.archived).sort((a,b)=>new Date(b.date)-new Date(a.date));if(!items.length){el.innerHTML='<div class="empty-state">No active sites</div>';return;}el.innerHTML=items.map(s=>`<div class="site-item ${ageClass(s.date)}" onclick="showScoutDetail(${s.id})"><div class="site-info"><div class="site-name">${s.name}</div><div class="site-meta">${s.species||'Species unknown'} · ${s.density} · ${ageLabel(s.date)}</div></div>${chipAge(s.date)}</div>`).join('');}
 function renderHerbList(){const el=document.getElementById('herb-list');const items=state.herb.filter(a=>!a.archived).sort((a,b)=>new Date(b.date)-new Date(a.date));if(!items.length){el.innerHTML='<div class="empty-state">No active application records</div>';return;}el.innerHTML=items.map(a=>`<div class="app-log-item ${a.complianceLogged?'compliance-logged':''}" onclick="showHerbDetail(${a.id})"><div class="log-info"><div class="log-name">${a.name}</div><div class="log-meta">${a.product||'Unspecified'} · ${a.method} · ${fmt(a.date)}</div></div><span class="chip ${a.complianceLogged?'chip-archived':'chip-green'}">${a.complianceLogged?'Filed':'Pending'}</span></div>`).join('');}
 function showArchived(type){document.getElementById('archived-title').textContent=type==='scout'?'📁 Archived Weed Sites':'📁 Archived Applications';const items=(type==='scout'?state.scout:state.herb).filter(x=>x.archived);const fn=type==='scout'?'showScoutDetail':'showHerbDetail';document.getElementById('archived-body').innerHTML=!items.length?'<div class="empty-state">Nothing archived</div>':items.map(x=>`<div class="site-item archived" onclick="closeModal('modal-archived');${fn}(${x.id})"><div class="site-info"><div class="site-name">${x.name}</div><div class="site-meta">${fmt(x.date)}</div></div><span class="chip chip-archived">Archived</span></div>`).join('');openModal('modal-archived');}
@@ -277,7 +273,7 @@ function updateCounts(){document.getElementById('scout-count').textContent=state
 function locateMe(tab){if(!navigator.geolocation){alert('Geolocation not available.');return;}navigator.geolocation.getCurrentPosition(p=>{const ll=[p.coords.latitude,p.coords.longitude];(tab==='scout'?scoutMap:herbMap).setView(ll,19);},()=>alert('Could not get location.'));}
 function exportCSV(type){let h,rows;if(type==='scout'){h=['ID','Name','Species','Density','Treatment','Notes','Lat','Lng','Date','Archived'];rows=state.scout.map(s=>[s.id,s.name,s.species,s.density,s.treatment,s.notes,s.lat,s.lng,s.date,s.archived]);}else{h=['ID','Name','Product','EPA_Reg','Method','Volume','Rate','Target','Applicator','Notes','Lat','Lng','Date','ComplianceLogged','Archived'];rows=state.herb.map(a=>[a.id,a.name,a.product,a.epa,a.method,a.volume,a.rate,a.target,a.applicator,a.notes,a.lat,a.lng,a.date,a.complianceLogged,a.archived]);}const csv=[h,...rows].map(r=>r.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=`umw_${type}_${new Date().toISOString().slice(0,10)}.csv`;a.click();}
 function triggerImport(type){document.getElementById('import-'+type).value='';document.getElementById('import-'+type).click();}
-function importCSV(event,type){const file=event.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=function(e){const text=e.target.result;const rows=parseCSV(text);if(rows.length<2){alert('CSV appears empty or unreadable.');return;}const headers=rows[0].map(h=>h.trim().toLowerCase());const dataRows=rows.slice(1).filter(r=>r.some(c=>c.trim()!==''));let added=0,skipped=0;if(type==='scout'){const idx={name:headers.indexOf('name'),species:headers.indexOf('species'),density:headers.indexOf('density'),treatment:headers.indexOf('treatment'),notes:headers.indexOf('notes'),lat:headers.indexOf('lat'),lng:headers.indexOf('lng'),date:headers.indexOf('date'),archived:headers.indexOf('archived')};if(idx.lat===-1||idx.lng===-1){alert('Missing Lat/Lng columns.');return;}dataRows.forEach(row=>{const lat=parseFloat(row[idx.lat]);const lng=parseFloat(row[idx.lng]);const date=row[idx.date]?row[idx.date].trim():new Date().toISOString();if(isNaN(lat)||isNaN(lng)){skipped++;return;}const isDupe=state.scout.some(s=>Math.abs(s.lat-lat)<0.00001&&Math.abs(s.lng-lng)<0.00001&&s.date===date);if(isDupe){skipped++;return;}const site={id:Date.now()+Math.random(),name:idx.name>=0?row[idx.name].trim():'Imported site',species:idx.species>=0?row[idx.species].trim():'',density:idx.density>=0?row[idx.density].trim():'Unknown',treatment:idx.treatment>=0?row[idx.treatment].trim():'',notes:idx.notes>=0?row[idx.notes].trim():'',lat,lng,date,archived:idx.archived>=0?row[idx.archived].trim().toLowerCase()==='true':false};state.scout.push(site);addScoutMarker(site);added++;});persist();renderScoutList();updateCounts();}else{const idx={name:headers.indexOf('name'),product:headers.indexOf('product'),epa:headers.indexOf('epa_reg'),method:headers.indexOf('method'),volume:headers.indexOf('volume'),rate:headers.indexOf('rate'),target:headers.indexOf('target'),applicator:headers.indexOf('applicator'),notes:headers.indexOf('notes'),lat:headers.indexOf('lat'),lng:headers.indexOf('lng'),date:headers.indexOf('date'),compliance:headers.indexOf('compliancelogged'),archived:headers.indexOf('archived')};if(idx.lat===-1||idx.lng===-1){alert('Missing Lat/Lng columns.');return;}dataRows.forEach(row=>{const lat=parseFloat(row[idx.lat]);const lng=parseFloat(row[idx.lng]);const date=row[idx.date]?row[idx.date].trim():new Date().toISOString();if(isNaN(lat)||isNaN(lng)){skipped++;return;}const isDupe=state.herb.some(a=>Math.abs(a.lat-lat)<0.00001&&Math.abs(a.lng-lng)<0.00001&&a.date===date);if(isDupe){skipped++;return;}const app={id:Date.now()+Math.random(),name:idx.name>=0?row[idx.name].trim():'Imported site',product:idx.product>=0?row[idx.product].trim():'',epa:idx.epa>=0?row[idx.epa].trim():'',method:idx.method>=0?row[idx.method].trim():'',volume:idx.volume>=0?row[idx.volume].trim():'',rate:idx.rate>=0?row[idx.rate].trim():'',target:idx.target>=0?row[idx.target].trim():'',applicator:idx.applicator>=0?row[idx.applicator].trim():'',notes:idx.notes>=0?row[idx.notes].trim():'',lat,lng,date,complianceLogged:idx.compliance>=0?row[idx.compliance].trim().toLowerCase()==='true':false,archived:idx.archived>=0?row[idx.archived].trim().toLowerCase()==='true':false};state.herb.push(app);addHerbMarker(app);added++;});persist();renderHerbList();updateCounts();}const msg=added>0?`✅ Imported ${added} record${added!==1?'s':''}.${skipped>0?' '+skipped+' duplicate(s) skipped.':''}`:`⚠️ No new records added — ${skipped} duplicate(s) already in your data.`;alert(msg);};reader.readAsText(file);}
+function importCSV(event,type){const file=event.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=function(e){const text=e.target.result;const rows=parseCSV(text);if(rows.length<2){alert('CSV appears empty or unreadable.');return;}const headers=rows[0].map(h=>h.trim().toLowerCase());const dataRows=rows.slice(1).filter(r=>r.some(c=>c.trim()!==''));let added=0,skipped=0;if(type==='scout'){const idx={name:headers.indexOf('name'),species:headers.indexOf('species'),density:headers.indexOf('density'),treatment:headers.indexOf('treatment'),notes:headers.indexOf('notes'),lat:headers.indexOf('lat'),lng:headers.indexOf('lng'),date:headers.indexOf('date'),archived:headers.indexOf('archived')};if(idx.lat===-1||idx.lng===-1){alert('Missing Lat/Lng columns.');return;}dataRows.forEach(row=>{const lat=parseFloat(row[idx.lat]);const lng=parseFloat(row[idx.lng]);const date=row[idx.date]?row[idx.date].trim():new Date().toISOString();if(isNaN(lat)||isNaN(lng)){skipped++;return;}const isDupe=state.scout.some(s=>Math.abs(s.lat-lat)<0.00001&&Math.abs(s.lng-lng)<0.00001&&s.date===date);if(isDupe){skipped++;return;}const site={id:Date.now()+Math.random(),name:idx.name>=0?row[idx.name].trim():'Imported site',species:idx.species>=0?row[idx.species].trim():'',density:idx.density>=0?row[idx.density].trim():'Unknown',treatment:idx.treatment>=0?row[idx.treatment].trim():'',notes:idx.notes>=0?row[idx.notes].trim():'',lat,lng,date,archived:idx.archived>=0?row[idx.archived].trim().toLowerCase()==='true':false};state.scout.push(site);addScoutMarker(site);added++;});persist();renderScoutList();updateCounts();}else{const idx={name:headers.indexOf('name'),product:headers.indexOf('product'),epa:headers.indexOf('epa_reg'),method:headers.indexOf('method'),volume:headers.indexOf('volume'),rate:headers.indexOf('rate'),target:headers.indexOf('target'),applicator:headers.indexOf('applicator'),notes:headers.indexOf('notes'),lat:headers.indexOf('lat'),lng:headers.indexOf('lng'),date:headers.indexOf('date'),compliance:headers.indexOf('compliancelogged'),archived:headers.indexOf('archived')};if(idx.lat===-1||idx.lng===-1){alert('Missing Lat/Lng columns.');return;}dataRows.forEach(row=>{const lat=parseFloat(row[idx.lat]);const lng=parseFloat(row[idx.lng]);const date=row[idx.date]?row[idx.date].trim():new Date().toISOString();if(isNaN(lat)||isNaN(lng)){skipped++;return;}const isDupe=state.herb.some(a=>Math.abs(a.lat-lat)<0.00001&&Math.abs(a.lng-lng)<0.00001&&a.date===date);if(isDupe){skipped++;return;}const app={id:Date.now()+Math.random(),name:idx.name>=0?row[idx.name].trim():'Imported site',product:idx.product>=0?row[idx.product].trim():'',epa:idx.epa>=0?row[idx.epa].trim():'',method:idx.method>=0?row[idx.method].trim():'',volume:idx.volume>=0?row[idx.volume].trim():'',rate:idx.rate>=0?row[idx.rate].trim():'',target:idx.target>=0?row[idx.target].trim():'',applicator:idx.applicator>=0?row[idx.applicator].trim():'',notes:idx.notes>=0?row[idx.notes].trim():'',lat,lng,date,complianceLogged:idx.compliance>=0?row[idx.compliance].trim().toLowerCase()==='true':false,archived:idx.archived>=0?row[idx.archived].trim().toLowerCase()==='true':false};state.herb.push(app);addHerbMarker(app);added++;});persist();renderHerbList();updateCounts();}showToast(added>0?`Imported ${added} record${added!==1?'s':''}.${skipped>0?' '+skipped+' duplicate(s) skipped.':''}`:`No new records — ${skipped} duplicate(s) already in your data.`);syncAfterSave();};reader.readAsText(file);}
 function parseCSV(text){const rows=[];let row=[],field='',inQuote=false;for(let i=0;i<text.length;i++){const c=text[i],next=text[i+1];if(inQuote){if(c==='"'&&next==='"'){field+='"';i++;}else if(c==='"'){inQuote=false;}else{field+=c;}}else{if(c==='"'){inQuote=true;}else if(c===','){row.push(field);field='';}else if(c==='\n'||(c==='\r'&&next==='\n')){row.push(field);field='';if(row.some(f=>f!==''))rows.push(row);row=[];if(c==='\r')i++;}else{field+=c;}}}if(field||row.length){row.push(field);if(row.some(f=>f!==''))rows.push(row);}return rows;}
 function v(id){return document.getElementById(id).value.trim();}
 function fmt(iso){return new Date(iso).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}
@@ -286,6 +282,8 @@ function mkbtn(parent,text,cls,handler,stretch){const b=document.createElement('
 function persist(){try{localStorage.setItem('umw_scout',JSON.stringify(state.scout));localStorage.setItem('umw_herb',JSON.stringify(state.herb));}catch(e){}}
 function loadData(){try{const s=localStorage.getItem('umw_scout'),h=localStorage.getItem('umw_herb');if(s)state.scout=JSON.parse(s);if(h)state.herb=JSON.parse(h);}catch(e){}}
 loadData();initMaps();state.scout.forEach(s=>addScoutMarker(s));state.herb.forEach(a=>addHerbMarker(a));renderScoutList();renderHerbList();updateCounts();
+document.querySelector('script[src*="api.js"]').onload=()=>gapi.load('client',async()=>{await gapi.client.init({apiKey:GOOG_API_KEY,discoveryDocs:['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']});gapiReady=true;tryAutoLoad();});
+document.querySelector('script[src*="gsi/client"]').onload=()=>{tokenClient=google.accounts.oauth2.initTokenClient({client_id:GOOG_CLIENT_ID,scope:DRIVE_SCOPES,callback:(resp)=>{if(resp.error){setSyncBtn('error','☁ Error');return;}accessToken=resp.access_token;gapi.client.setToken({access_token:accessToken});setSyncBtn('signed-in','⟳ Sync Now');syncFromDrive();}});gsiReady=true;tryAutoLoad();};
 </script>
 </body>
 </html>
