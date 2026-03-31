@@ -1,3 +1,6 @@
+That's because you're looking at the old version on GitHub. Rather than trying to find the right spot to edit, easiest thing is to just replace the whole file again. Go to GitHub, click the pencil on `index.html`, select all, delete, and paste the full code I'll give you below — this has the fix already built in:Good — the file looks correct. Copy everything in the block below, go to GitHub, open `index.html` with the pencil, select all, delete, paste this in, and commit:
+
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -233,8 +236,6 @@ let scoutSatOn=false,herbSatOn=false,scoutStreet,scoutSat,herbStreet,herbSat;
 let tokenClient=null,accessToken=null,driveFileId=null,gapiReady=false,gsiReady=false;
 document.getElementById('header-date').textContent=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
 function initMaps(){const C=[38.3012,-77.4756],Z=17;scoutMap=L.map('scout-map',{zoomControl:true,tap:true}).setView(C,Z);scoutStreet=L.tileLayer(STREET_URL,STREET_OPT).addTo(scoutMap);scoutSat=L.tileLayer(SAT_URL,SAT_OPT);scoutMap.on('click',e=>{tempLatLng=e.latlng;clearScoutForm();openModal('modal-scout');});herbMap=L.map('herb-map',{zoomControl:true,tap:true}).setView(C,Z);herbStreet=L.tileLayer(STREET_URL,STREET_OPT).addTo(herbMap);herbSat=L.tileLayer(SAT_URL,SAT_OPT);herbMap.on('click',e=>{tempLatLng=e.latlng;clearHerbForm();openModal('modal-herb');});setTimeout(()=>{scoutMap.invalidateSize({pan:false});herbMap.invalidateSize({pan:false});},200);window.addEventListener('resize',()=>{scoutMap.invalidateSize({pan:false});herbMap.invalidateSize({pan:false});});}
-function initGapi(){gapi.load('client',async()=>{await gapi.client.init({apiKey:GOOG_API_KEY,discoveryDocs:['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']});gapiReady=true;tryAutoLoad();});}
-function initGsi(){tokenClient=google.accounts.oauth2.initTokenClient({client_id:GOOG_CLIENT_ID,scope:DRIVE_SCOPES,callback:(resp)=>{if(resp.error){setSyncBtn('error','☁ Error');return;}accessToken=resp.access_token;gapi.client.setToken({access_token:accessToken});setSyncBtn('signed-in','⟳ Sync Now');syncFromDrive();}});gsiReady=true;tryAutoLoad();}
 function tryAutoLoad(){if(gapiReady&&gsiReady){const hint=localStorage.getItem('umw_gdrive_hint');if(hint)tokenClient.requestAccessToken({prompt:'none',login_hint:hint});}}
 function handleSyncClick(){if(!gapiReady||!gsiReady){showToast('Google API still loading, try again');return;}if(accessToken){syncFromDrive();}else{tokenClient.requestAccessToken({prompt:'consent'});}}
 function setSyncBtn(cls,text){const b=document.getElementById('sync-btn');b.className='sync-btn'+(cls?' '+cls:'');b.textContent=text;}
@@ -282,8 +283,37 @@ function mkbtn(parent,text,cls,handler,stretch){const b=document.createElement('
 function persist(){try{localStorage.setItem('umw_scout',JSON.stringify(state.scout));localStorage.setItem('umw_herb',JSON.stringify(state.herb));}catch(e){}}
 function loadData(){try{const s=localStorage.getItem('umw_scout'),h=localStorage.getItem('umw_herb');if(s)state.scout=JSON.parse(s);if(h)state.herb=JSON.parse(h);}catch(e){}}
 loadData();initMaps();state.scout.forEach(s=>addScoutMarker(s));state.herb.forEach(a=>addHerbMarker(a));renderScoutList();renderHerbList();updateCounts();
-document.querySelector('script[src*="api.js"]').onload=()=>gapi.load('client',async()=>{await gapi.client.init({apiKey:GOOG_API_KEY,discoveryDocs:['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']});gapiReady=true;tryAutoLoad();});
-document.querySelector('script[src*="gsi/client"]').onload=()=>{tokenClient=google.accounts.oauth2.initTokenClient({client_id:GOOG_CLIENT_ID,scope:DRIVE_SCOPES,callback:(resp)=>{if(resp.error){setSyncBtn('error','☁ Error');return;}accessToken=resp.access_token;gapi.client.setToken({access_token:accessToken});setSyncBtn('signed-in','⟳ Sync Now');syncFromDrive();}});gsiReady=true;tryAutoLoad();};
+function initGoogleWhenReady(){
+  const gapiPresent=typeof gapi!=='undefined';
+  const gsiPresent=typeof google!=='undefined'&&google.accounts;
+  if(gapiPresent&&!gapiReady){
+    gapi.load('client',async()=>{
+      try{
+        await gapi.client.init({apiKey:GOOG_API_KEY,discoveryDocs:['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']});
+        gapiReady=true;
+        if(gsiReady)tryAutoLoad();
+      }catch(e){console.warn('GAPI init error',e);}
+    });
+  }
+  if(gsiPresent&&!gsiReady){
+    tokenClient=google.accounts.oauth2.initTokenClient({
+      client_id:GOOG_CLIENT_ID,
+      scope:DRIVE_SCOPES,
+      callback:(resp)=>{
+        if(resp.error){setSyncBtn('error','☁ Error');return;}
+        accessToken=resp.access_token;
+        gapi.client.setToken({access_token:accessToken});
+        setSyncBtn('signed-in','⟳ Sync Now');
+        syncFromDrive();
+      }
+    });
+    gsiReady=true;
+    if(gapiReady)tryAutoLoad();
+  }
+  if(!gapiReady||!gsiReady){setTimeout(initGoogleWhenReady,300);}
+}
+initGoogleWhenReady();
 </script>
 </body>
 </html>
+```
