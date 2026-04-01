@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>UMW IPM Tracker</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://accounts.google.com/gsi/client"></script>
+<script src="https://apis.google.com/js/api.js"></script>
+<style>
+  :root{
+    --dark:#1a1f2e;--mid:#252d42;--light:#2f3a56;--accent:#4a7fd4;--accent2:#e07b28;
+    --tan:#c4b89a;--cream:#f0ede6;--red:#c0392b;--orange:#e07b28;--yellow:#c8960a;
+    --gray:#7a7a7a;--archived:#9b9b9b;--green:#27ae60;--purple:#8e44ad;--teal:#16a085;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  html{height:100%;}
+  body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:Georgia,serif;background:var(--dark);color:var(--cream);display:flex;flex-direction:column;}
+  header{background:var(--dark);padding:10px 16px 0;flex-shrink:0;border-bottom:2px solid var(--light);padding-top:max(10px,env(safe-area-inset-top));}
+  .header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  .app-title{font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--tan);}
+  .app-subtitle{font-size:10px;color:var(--accent);letter-spacing:.08em;text-transform:uppercase;margin-top:1px;}
+  .header-right{display:flex;align-items:center;gap:8px;}
+  .header-badge{background:var(--mid);border:1px solid var(--accent);border-radius:4px;padding:4px 8px;font-size:10px;color:var(--tan);letter-spacing:.06em;}
+  .sync-btn{background:var(--mid);border:1px solid var(--accent);border-radius:4px;padding:4px 10px;font-size:10px;color:var(--tan);letter-spacing:.06em;cursor:pointer;text-transform:uppercase;font-family:Georgia,serif;}
+  .sync-btn.signed-in{color:var(--green);}
+  .sync-btn.syncing{color:var(--yellow);border-color:var(--yellow);}
+  .sync-btn.error{color:var(--red);border-color:var(--red);}
+  .tabs{display:flex;gap:2px;}
+  .tab{flex:1;padding:8px 4px;text-align:center;font-size:10px;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;border-radius:4px 4px 0 0;color:var(--tan);background:var(--mid);border:1px solid transparent;border-bottom:none;user-select:none;}
+  .tab.active{background:var(--cream);color:var(--dark);border-color:var(--tan);font-weight:bold;}
+  .tab-count{display:inline-block;background:var(--red);color:#fff;border-radius:10px;font-size:9px;padding:1px 5px;margin-left:3px;vertical-align:middle;font-weight:bold;min-width:16px;text-align:center;}
+  .tab.active .tab-count{background:var(--light);}
+  .tab-count.urgent{background:var(--orange);}
+  .panel{display:none;flex:1;flex-direction:column;overflow:hidden;background:var(--cream);min-height:0;}
+  .panel.active{display:flex;}
+  .map-wrap{position:relative;flex:1;min-height:0;overflow:hidden;}
+  .leaflet-container{position:absolute !important;inset:0;width:100% !important;height:100% !important;}
+  .map-tap-hint{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);background:rgba(26,31,46,.9);color:var(--tan);padding:6px 14px;border-radius:20px;font-size:11px;letter-spacing:.06em;pointer-events:none;z-index:500;white-space:nowrap;border:1px solid var(--light);}
+  .locate-btn{position:absolute;top:10px;right:10px;z-index:500;background:var(--dark);border:1.5px solid var(--light);color:var(--tan);border-radius:6px;padding:8px 11px;font-size:16px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.3);}
+  .layer-btn{position:absolute;top:10px;left:10px;z-index:500;background:var(--dark);border:1.5px solid var(--light);color:var(--tan);border-radius:6px;padding:6px 10px;font-size:10px;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.3);}
+  .legend{display:flex;gap:8px;flex-wrap:wrap;padding:5px 14px;background:var(--dark);border-top:1px solid var(--mid);flex-shrink:0;}
+  .legend-item{display:flex;align-items:center;gap:4px;font-size:9px;color:var(--tan);}
+  .legend-dot{width:9px;height:9px;border-radius:50%;border:1.5px solid rgba(255,255,255,.3);flex-shrink:0;}
+  .legend-sq{width:9px;height:9px;border-radius:2px;border:1.5px solid rgba(255,255,255,.3);flex-shrink:0;}
+  .drawer{background:var(--dark);border-top:2px solid var(--light);flex-shrink:0;z-index:10;}
+  .drawer-handle{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;cursor:pointer;user-select:none;}
+  .drawer-title{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--tan);}
+  .drawer-toggle{font-size:14px;color:var(--accent);transition:transform .2s;display:inline-block;}
+  .drawer.open .drawer-toggle{transform:rotate(180deg);}
+  .drawer-body{display:none;padding:0 14px 12px;max-height:240px;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+  .drawer.open .drawer-body{display:block;}
+  .site-list{margin-top:4px;}
+  .site-item{background:var(--mid);border-radius:5px;padding:9px 11px;margin-bottom:7px;display:flex;align-items:center;gap:10px;border-left:4px solid var(--gray);cursor:pointer;}
+  .site-item.severity-low{border-left-color:var(--yellow);}
+  .site-item.severity-medium{border-left-color:var(--orange);}
+  .site-item.severity-high{border-left-color:var(--red);}
+  .site-item.severity-critical{border-left-color:var(--purple);}
+  .site-item.status-monitored{opacity:.75;}
+  .site-item.status-resolved{opacity:.45;}
+  .site-item.archived{opacity:.4;}
+  .site-info{flex:1;min-width:0;}
+  .site-name{font-size:13px;color:var(--cream);font-weight:bold;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .site-meta{font-size:10px;color:var(--tan);margin-top:2px;}
+  .app-log-item{background:var(--mid);border-radius:5px;padding:9px 11px;margin-bottom:7px;display:flex;align-items:center;gap:10px;border-left:4px solid var(--accent);cursor:pointer;}
+  .app-log-item.compliance-logged{border-left-color:var(--archived);opacity:.55;}
+  .app-log-item.needs-retreat{border-left-color:var(--orange);}
+  .log-info{flex:1;min-width:0;}
+  .log-name{font-size:13px;color:var(--cream);font-weight:bold;}
+  .log-meta{font-size:10px;color:var(--tan);margin-top:2px;}
+  .followup-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px 14px;background:var(--cream);}
+  .followup-section-title{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--gray);margin:12px 0 6px;border-bottom:1px solid #ddd;padding-bottom:4px;}
+  .followup-item{background:var(--mid);border-radius:6px;padding:11px 13px;margin-bottom:8px;border-left:4px solid var(--orange);cursor:pointer;}
+  .followup-item.overdue{border-left-color:var(--red);}
+  .followup-item.needs-retreat{border-left-color:var(--purple);}
+  .followup-item.checked{border-left-color:var(--green);opacity:.6;}
+  .followup-name{font-size:13px;color:var(--cream);font-weight:bold;}
+  .followup-meta{font-size:10px;color:var(--tan);margin-top:3px;}
+  .empty-followup{text-align:center;padding:40px 20px;color:var(--gray);font-size:12px;letter-spacing:.06em;text-transform:uppercase;}
+  .empty-state{text-align:center;padding:20px;color:var(--accent);font-size:12px;letter-spacing:.06em;text-transform:uppercase;}
+  .csv-row{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}
+  .chip{display:inline-block;border-radius:3px;padding:2px 6px;font-size:9px;letter-spacing:.06em;text-transform:uppercase;font-weight:bold;white-space:nowrap;flex-shrink:0;}
+  .chip-red{background:var(--red);color:#fff;}
+  .chip-yellow{background:var(--yellow);color:#fff;}
+  .chip-orange{background:var(--orange);color:#fff;}
+  .chip-green{background:var(--green);color:#fff;}
+  .chip-teal{background:var(--teal);color:#fff;}
+  .chip-purple{background:var(--purple);color:#fff;}
+  .chip-blue{background:var(--accent);color:#fff;}
+  .chip-gray{background:var(--gray);color:#fff;}
+  .chip-archived{background:var(--archived);color:#fff;}
+  /* SLF conditional fields */
+  .slf-fields{display:none;}
+  .slf-fields.show{display:block;}
+  .form-row{display:flex;gap:8px;margin-bottom:8px;}
+  .form-group{flex:1;display:flex;flex-direction:column;gap:3px;}
+  label{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--tan);}
+  input,select,textarea{background:var(--mid);border:1px solid var(--light);border-radius:4px;color:var(--cream);font-size:16px;padding:7px 8px;font-family:inherit;width:100%;-webkit-appearance:none;appearance:none;}
+  input::placeholder,textarea::placeholder{color:var(--accent);font-size:14px;opacity:.7;}
+  textarea{resize:none;height:52px;}
+  .btn{border:none;border-radius:5px;font-family:Georgia,serif;font-size:12px;letter-spacing:.06em;cursor:pointer;padding:10px 14px;text-transform:uppercase;transition:filter .15s,transform .1s;}
+  .btn:active{transform:scale(.97);filter:brightness(.9);}
+  .btn-primary{background:var(--accent);color:#fff;}
+  .btn-warn{background:var(--orange);color:#fff;}
+  .btn-danger{background:var(--red);color:#fff;}
+  .btn-green{background:var(--green);color:#fff;}
+  .btn-purple{background:var(--purple);color:#fff;}
+  .btn-ghost{background:transparent;border:1px solid var(--accent);color:var(--accent);}
+  .btn-sm{padding:6px 10px;font-size:11px;}
+  .btn-row{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;}
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:2000;align-items:flex-end;justify-content:center;}
+  .modal-overlay.open{display:flex;}
+  .modal{background:var(--dark);border-top:2px solid var(--light);border-radius:16px 16px 0 0;width:100%;max-width:640px;padding:20px 18px;padding-bottom:max(24px,env(safe-area-inset-bottom));max-height:92dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+  .modal-title{font-size:14px;letter-spacing:.1em;text-transform:uppercase;color:var(--tan);margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--mid);}
+  .section-divider{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin:12px 0 8px;padding-bottom:4px;border-bottom:1px solid var(--mid);}
+  .gps-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--accent);margin-right:5px;animation:pulse 1.8s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.65)}}
+  .detail-table{width:100%;font-size:12px;border-collapse:collapse;}
+  .detail-table td{padding:5px 6px 5px 0;vertical-align:top;}
+  .detail-table td:first-child{color:var(--tan);font-size:10px;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;padding-right:10px;width:1%;}
+  .detail-table td:last-child{color:var(--cream);}
+  .toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--mid);border:1px solid var(--accent);color:var(--cream);padding:8px 18px;border-radius:20px;font-size:12px;letter-spacing:.05em;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;}
+  .toast.show{opacity:1;}
+  .rei-banner{background:var(--mid);border:1px solid var(--orange);border-radius:5px;padding:8px 12px;margin-top:10px;font-size:11px;color:var(--orange);display:none;}
+  .rei-banner.show{display:block;}
+</style>
+</head>
+<body>
+<header>
+  <div class="header-top">
+    <div><div class="app-title">UMW Grounds</div><div class="app-subtitle">IPM Tracker</div></div>
+    <div class="header-right">
+      <button class="sync-btn" id="sync-btn" onclick="handleSyncClick()">☁ Sign In</button>
+      <div class="header-badge"><span class="gps-dot"></span><span id="header-date"></span></div>
+    </div>
+  </div>
+  <div class="tabs">
+    <div class="tab active" id="tab-scout" onclick="switchTab('scout')">🔎 Scouting <span class="tab-count" id="scout-count">0</span></div>
+    <div class="tab" id="tab-app" onclick="switchTab('app')">💉 Applications <span class="tab-count" id="app-count">0</span></div>
+    <div class="tab" id="tab-followup" onclick="switchTab('followup')">🔁 Follow-up <span class="tab-count" id="followup-count">0</span></div>
+  </div>
+</header>
+
+<!-- SCOUT PANEL -->
+<div class="panel active" id="panel-scout">
+  <div class="map-wrap">
+    <div id="scout-map"></div>
+    <button class="locate-btn" onclick="locateMe('scout')">📍</button>
+    <button class="layer-btn" id="scout-layer-btn" onclick="toggleLayer('scout')">🛰 Satellite</button>
+    <div class="map-tap-hint">Tap map to flag a pest or disease problem</div>
+  </div>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:var(--yellow)"></div>Low</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--orange)"></div>Medium</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>High</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--purple)"></div>Critical</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--teal)"></div>Monitored</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--gray)"></div>Resolved</div>
+  </div>
+  <div class="drawer" id="scout-drawer">
+    <div class="drawer-handle" onclick="toggleDrawer('scout-drawer')"><span class="drawer-title">Flagged Sites</span><span class="drawer-toggle">▲</span></div>
+    <div class="drawer-body">
+      <div class="site-list" id="scout-list"><div class="empty-state">No sites flagged yet</div></div>
+      <div class="csv-row">
+        <button class="btn btn-ghost btn-sm" onclick="exportCSV('scout')" style="flex:1">⬇ Export</button>
+        <button class="btn btn-ghost btn-sm" onclick="triggerImport('scout')" style="flex:1">⬆ Import</button>
+        <button class="btn btn-ghost btn-sm" onclick="showArchived('scout')" style="flex:1">📁 Archived</button>
+      </div>
+      <input type="file" id="import-scout" accept=".csv" style="display:none" onchange="importCSV(event,'scout')">
+    </div>
+  </div>
+</div>
+
+<!-- APP PANEL -->
+<div class="panel" id="panel-app">
+  <div class="map-wrap">
+    <div id="app-map"></div>
+    <button class="locate-btn" onclick="locateMe('app')">📍</button>
+    <button class="layer-btn" id="app-layer-btn" onclick="toggleLayer('app')">🛰 Satellite</button>
+    <div class="map-tap-hint">Tap map to log an application</div>
+  </div>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-sq" style="background:var(--accent)"></div>Application</div>
+    <div class="legend-item"><div class="legend-sq" style="background:var(--archived)"></div>Compliance filed</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--red);opacity:.4"></div>Active problem site</div>
+  </div>
+  <div class="drawer" id="app-drawer">
+    <div class="drawer-handle" onclick="toggleDrawer('app-drawer')"><span class="drawer-title">Application Log</span><span class="drawer-toggle">▲</span></div>
+    <div class="drawer-body">
+      <div class="site-list" id="app-list"><div class="empty-state">No applications logged yet</div></div>
+      <div class="csv-row">
+        <button class="btn btn-ghost btn-sm" onclick="exportCSV('app')" style="flex:1">⬇ Export</button>
+        <button class="btn btn-ghost btn-sm" onclick="triggerImport('app')" style="flex:1">⬆ Import</button>
+        <button class="btn btn-ghost btn-sm" onclick="showArchived('app')" style="flex:1">📁 Archived</button>
+      </div>
+      <input type="file" id="import-app" accept=".csv" style="display:none" onchange="importCSV(event,'app')">
+    </div>
+  </div>
+</div>
+
+<!-- FOLLOWUP PANEL -->
+<div class="panel" id="panel-followup">
+  <div class="followup-scroll" id="followup-scroll">
+    <div class="empty-followup">✓ No follow-ups due</div>
+  </div>
+</div>
+
+<!-- SCOUT MODAL -->
+<div class="modal-overlay" id="modal-scout">
+  <div class="modal">
+    <div class="modal-title">🔎 Flag Problem Site</div>
+    <div class="form-row"><div class="form-group"><label>Site Name / Location</label><input id="s-name" type="text" placeholder="e.g. Combs Hall south foundation"></div></div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Problem Type</label>
+        <select id="s-type" onchange="toggleSLF()">
+          <option value="Insect Outbreak">Insect Outbreak</option>
+          <option value="Plant Disease">Plant Disease / Fungal</option>
+          <option value="Invasive Insect">Invasive Insect</option>
+          <option value="SLF">Spotted Lanternfly (SLF)</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="form-group" style="max-width:130px">
+        <label>Severity</label>
+        <select id="s-severity">
+          <option>Low</option>
+          <option>Medium</option>
+          <option selected>High</option>
+          <option>Critical</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row"><div class="form-group"><label>Pest / Pathogen Name</label><input id="s-pest" type="text" placeholder="e.g. Lycorma delicatula, Phytophthora"></div></div>
+    <div class="form-row"><div class="form-group"><label>Host Plant / Affected Species</label><input id="s-host" type="text" placeholder="e.g. Acer rubrum, Boxwood hedge"></div></div>
+
+    <!-- SLF conditional fields -->
+    <div class="slf-fields" id="slf-fields">
+      <div class="section-divider">SLF Details</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Life Stage</label>
+          <select id="s-slf-stage">
+            <option>Egg mass</option>
+            <option>Early nymph (1st–2nd instar)</option>
+            <option>Late nymph (3rd–4th instar)</option>
+            <option>Adult</option>
+            <option>Mixed stages</option>
+          </select>
+        </div>
+        <div class="form-group" style="max-width:130px">
+          <label>Population</label>
+          <select id="s-slf-pop">
+            <option>Low (&lt;10)</option>
+            <option>Medium (10–50)</option>
+            <option>High (50–200)</option>
+            <option>Very High (200+)</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row"><div class="form-group"><label>Ailanthus Present Nearby?</label><select id="s-slf-ailan"><option>Unknown</option><option>Yes</option><option>No</option></select></div></div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Status</label>
+        <select id="s-status">
+          <option value="Active">Active</option>
+          <option value="Monitored">Monitored</option>
+          <option value="Resolved">Resolved</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row"><div class="form-group"><label>Notes</label><textarea id="s-notes" placeholder="Observations, distribution, surrounding conditions…"></textarea></div></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" style="flex:2" onclick="saveScoutSite()">Save Site</button>
+      <button class="btn btn-ghost" style="flex:1" onclick="closeModal('modal-scout')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- APPLICATION MODAL -->
+<div class="modal-overlay" id="modal-app">
+  <div class="modal">
+    <div class="modal-title">💉 Log Application</div>
+    <div class="form-row"><div class="form-group"><label>Site Name</label><input id="a-name" type="text" placeholder="e.g. Combs Hall south foundation"></div></div>
+
+    <div class="section-divider">Product</div>
+    <div class="form-row">
+      <div class="form-group"><label>Product Name</label><input id="a-product" type="text" placeholder="e.g. Safari 20SG"></div>
+      <div class="form-group" style="max-width:130px"><label>EPA Reg. #</label><input id="a-epa" type="text" placeholder="e.g. 264-828"></div>
+    </div>
+    <div class="form-row"><div class="form-group"><label>Active Ingredient</label><input id="a-ai" type="text" placeholder="e.g. Dinotefuran, Azadirachtin"></div></div>
+    <div class="form-row">
+      <div class="form-group"><label>Mix Rate / Conc.</label><input id="a-rate" type="text" placeholder="e.g. 4 oz/100 gal"></div>
+      <div class="form-group" style="max-width:130px"><label>Volume Applied</label><input id="a-volume" type="text" placeholder="e.g. 2 gal"></div>
+    </div>
+
+    <div class="section-divider">Application</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Method</label>
+        <select id="a-method">
+          <option>Backpack sprayer</option>
+          <option>Handgun</option>
+          <option>Boom (side-by-side)</option>
+          <option>Trunk injection</option>
+          <option>Soil injection</option>
+        </select>
+      </div>
+      <div class="form-group" style="max-width:130px">
+        <label>Reapply Interval</label>
+        <input id="a-interval" type="number" placeholder="days" min="1" max="365">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>REI (hours)</label><input id="a-rei" type="number" placeholder="e.g. 12" min="0"></div>
+      <div class="form-group"><label>Applicator / License #</label><input id="a-applicator" type="text" placeholder="Name / cert #"></div>
+    </div>
+
+    <div class="section-divider">Conditions at Application</div>
+    <div class="form-row">
+      <div class="form-group"><label>Temp (°F)</label><input id="a-temp" type="number" placeholder="e.g. 72"></div>
+      <div class="form-group"><label>Wind Speed (mph)</label><input id="a-wind" type="number" placeholder="e.g. 5"></div>
+      <div class="form-group">
+        <label>Sky</label>
+        <select id="a-sky">
+          <option>Clear</option>
+          <option>Partly cloudy</option>
+          <option>Overcast</option>
+          <option>Light rain</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row"><div class="form-group"><label>PPE Used</label><input id="a-ppe" type="text" placeholder="e.g. Gloves, respirator, goggles"></div></div>
+    <div class="form-row"><div class="form-group"><label>Notes</label><textarea id="a-notes" placeholder="Additional observations, site conditions…"></textarea></div></div>
+    <div class="btn-row">
+      <button class="btn btn-warn" style="flex:2" onclick="saveAppRecord()">Log Application</button>
+      <button class="btn btn-ghost" style="flex:1" onclick="closeModal('modal-app')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="modal-overlay" id="modal-detail">
+  <div class="modal">
+    <div class="modal-title" id="detail-title">Detail</div>
+    <div id="detail-body"></div>
+    <div class="btn-row" id="detail-actions" style="margin-top:14px;"></div>
+  </div>
+</div>
+
+<!-- ARCHIVED MODAL -->
+<div class="modal-overlay" id="modal-archived">
+  <div class="modal">
+    <div class="modal-title" id="archived-title">Archived</div>
+    <div id="archived-body"></div>
+    <div class="btn-row" style="margin-top:12px;"><button class="btn btn-ghost" style="flex:1" onclick="closeModal('modal-archived')">Close</button></div>
+  </div>
+</div>
+
+<!-- FOLLOWUP DETAIL MODAL -->
+<div class="modal-overlay" id="modal-followup-detail">
+  <div class="modal">
+    <div class="modal-title" id="followup-detail-title">🔁 Reapplication Check</div>
+    <div id="followup-detail-body"></div>
+    <div class="btn-row" id="followup-detail-actions" style="margin-top:14px;flex-wrap:wrap;"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONFIG ─────────────────────────────────────────────
+const GOOG_CLIENT_ID='890777241821-dt139ab7vhm8kt68vd1hfhi3163frk0j.apps.googleusercontent.com';
+const GOOG_API_KEY='AIzaSyAscphLQ9Pef0O6LUoX5i2GcJmDcqKWAGM';
+const DRIVE_SCOPES='https://www.googleapis.com/auth/drive.appdata';
+const DRIVE_FILE='umw_ipm_data.json'; // separate from weed tracker
+const MBKEY='pk.eyJ1IjoiamtjYXJlYXR0aSIsImEiOiJjbW5lcWpqMHkwMmg5MndvcHJldWNnY3piIn0.7aenv95oURdZS1BJltGZfQ';
+const STREET_URL=`https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/{z}/{x}/{y}?access_token=${MBKEY}`;
+const STREET_OPT={attribution:'© <a href="https://www.mapbox.com/">Mapbox</a>',tileSize:512,zoomOffset:-1,maxZoom:22};
+const SAT_URL=`https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/{z}/{x}/{y}?access_token=${MBKEY}`;
+const SAT_OPT={attribution:'© <a href="https://www.mapbox.com/">Mapbox</a>',tileSize:512,zoomOffset:-1,maxZoom:22};
+const DEFAULT_INTERVAL=14;
+
+// ── STATE ─────────────────────────────────────────────
+const state={scout:[],app:[]};
+let tempLatLng=null,scoutMap,appMap;
+let scoutMarkers={},appMarkers={},ghostMarkers={};
+let scoutSatOn=false,appSatOn=false,scoutStreet,scoutSat,appStreet,appSat;
+let tokenClient=null,accessToken=null,driveFileId=null,gapiReady=false,gsiReady=false;
+
+// ── INIT ──────────────────────────────────────────────
+document.getElementById('header-date').textContent=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+
+function initMaps(){
+  const C=[38.3012,-77.4756],Z=17;
+  scoutMap=L.map('scout-map',{zoomControl:true,tap:true}).setView(C,Z);
+  scoutStreet=L.tileLayer(STREET_URL,STREET_OPT).addTo(scoutMap);
+  scoutSat=L.tileLayer(SAT_URL,SAT_OPT);
+  scoutMap.on('click',e=>{tempLatLng=e.latlng;clearScoutForm();openModal('modal-scout');});
+  appMap=L.map('app-map',{zoomControl:true,tap:true}).setView(C,Z);
+  appStreet=L.tileLayer(STREET_URL,STREET_OPT).addTo(appMap);
+  appSat=L.tileLayer(SAT_URL,SAT_OPT);
+  appMap.on('click',e=>{tempLatLng=e.latlng;clearAppForm();openModal('modal-app');});
+  setTimeout(()=>{scoutMap.invalidateSize({pan:false});appMap.invalidateSize({pan:false});},200);
+  window.addEventListener('resize',()=>{scoutMap.invalidateSize({pan:false});appMap.invalidateSize({pan:false});});
+}
+
+// ── GOOGLE AUTH ────────────────────────────────────────
+function tryAutoLoad(){if(gapiReady&&gsiReady){const h=localStorage.getItem('umw_ipm_gdrive_hint');if(h)tokenClient.requestAccessToken({prompt:'none',login_hint:h});}}
+function handleSyncClick(){if(!gapiReady||!gsiReady){showToast('Google API still loading');return;}if(accessToken){syncFromDrive();}else{tokenClient.requestAccessToken({prompt:'consent'});}}
+function setSyncBtn(cls,text){const b=document.getElementById('sync-btn');b.className='sync-btn'+(cls?' '+cls:'');b.textContent=text;}
+async function syncFromDrive(){setSyncBtn('syncing','⟳ Syncing…');try{const list=await gapi.client.drive.files.list({spaces:'appDataFolder',q:`name='${DRIVE_FILE}'`,fields:'files(id,name)'});const files=list.result.files;if(files&&files.length>0){driveFileId=files[0].id;const resp=await gapi.client.drive.files.get({fileId:driveFileId,alt:'media'});mergeRemote(JSON.parse(resp.body));}await pushToDrive();setSyncBtn('signed-in','✓ Synced');showToast('Sync complete');const hint=await getLoginHint();if(hint)localStorage.setItem('umw_ipm_gdrive_hint',hint);}catch(e){console.error(e);setSyncBtn('error','☁ Sync Failed');showToast('Sync failed');}}
+async function pushToDrive(){const body=JSON.stringify({scout:state.scout,app:state.app});if(driveFileId){await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`,{method:'PATCH',headers:{'Authorization':'Bearer '+accessToken,'Content-Type':'application/json'},body});}else{const meta={name:DRIVE_FILE,parents:['appDataFolder']};const form=new FormData();form.append('metadata',new Blob([JSON.stringify(meta)],{type:'application/json'}));form.append('file',new Blob([body],{type:'application/json'}));const r=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',{method:'POST',headers:{'Authorization':'Bearer '+accessToken},body:form});driveFileId=(await r.json()).id;}}
+function mergeRemote(remote){if(remote.scout)remote.scout.forEach(rs=>{if(!state.scout.find(ls=>ls.id===rs.id)){state.scout.push(rs);addScoutMarker(rs);}});if(remote.app)remote.app.forEach(ra=>{if(!state.app.find(la=>la.id===ra.id)){state.app.push(ra);addAppMarker(ra);}});persist();renderAll();}
+async function getLoginHint(){try{const r=await gapi.client.request({path:'https://www.googleapis.com/oauth2/v3/userinfo'});return r.result.email||null;}catch(e){return null;}}
+function syncAfterSave(){if(accessToken){setSyncBtn('syncing','⟳ Saving…');pushToDrive().then(()=>setSyncBtn('signed-in','✓ Synced')).catch(()=>setSyncBtn('error','☁ Save Failed'));}}
+
+// ── TOAST ──────────────────────────────────────────────
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
+
+// ── SLF CONDITIONAL ───────────────────────────────────
+function toggleSLF(){document.getElementById('slf-fields').classList.toggle('show',document.getElementById('s-type').value==='SLF');}
+
+// ── LAYER TOGGLE ──────────────────────────────────────
+function toggleLayer(tab){
+  if(tab==='scout'){scoutSatOn=!scoutSatOn;if(scoutSatOn){scoutMap.removeLayer(scoutStreet);scoutSat.addTo(scoutMap);document.getElementById('scout-layer-btn').textContent='🗺 Street';}else{scoutMap.removeLayer(scoutSat);scoutStreet.addTo(scoutMap);document.getElementById('scout-layer-btn').textContent='🛰 Satellite';}}
+  else{appSatOn=!appSatOn;if(appSatOn){appMap.removeLayer(appStreet);appSat.addTo(appMap);document.getElementById('app-layer-btn').textContent='🗺 Street';}else{appMap.removeLayer(appSat);appStreet.addTo(appMap);document.getElementById('app-layer-btn').textContent='🛰 Satellite';}}
+}
+
+// ── TABS ───────────────────────────────────────────────
+function switchTab(tab){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  document.getElementById('panel-'+tab).classList.add('active');
+  if(tab==='scout')setTimeout(()=>scoutMap.invalidateSize({pan:false}),80);
+  if(tab==='app'){setTimeout(()=>appMap.invalidateSize({pan:false}),80);refreshGhostMarkers();}
+  if(tab==='followup')renderFollowup();
+}
+function toggleDrawer(id){document.getElementById(id).classList.toggle('open');}
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+
+// ── ICONS ──────────────────────────────────────────────
+const SEVERITY_COLORS={Low:'#c8960a',Medium:'#e07b28',High:'#c0392b',Critical:'#8e44ad'};
+const STATUS_COLORS={Active:null,Monitored:'#16a085',Resolved:'#7a7a7a'};
+
+function scoutIcon(site){
+  const col=site.status==='Resolved'?'#7a7a7a':site.status==='Monitored'?'#16a085':(SEVERITY_COLORS[site.severity]||'#e07b28');
+  const op=site.archived?'0.3':site.status==='Resolved'?'0.45':'1';
+  const isSLF=site.type==='SLF';
+  // SLF gets a star shape, others get the teardrop
+  const shape=isSLF
+    ?`<div style="width:22px;height:22px;background:${col};clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);opacity:${op}"></div>`
+    :`<div style="width:22px;height:22px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:${col};border:2px solid rgba(255,255,255,.7);box-shadow:0 2px 5px rgba(0,0,0,.4);opacity:${op}"></div>`;
+  return L.divIcon({className:'',iconSize:[22,22],iconAnchor:[11,22],popupAnchor:[0,-24],html:shape});
+}
+
+function appIcon(rec){
+  const col=rec.needsReapply?'#e07b28':rec.complianceLogged||rec.archived?'#9b9b9b':'#4a7fd4';
+  const op=rec.complianceLogged||rec.archived?'0.5':'1';
+  return L.divIcon({className:'',iconSize:[22,22],iconAnchor:[11,11],popupAnchor:[0,-14],html:`<div style="width:22px;height:22px;border-radius:4px;transform:rotate(45deg);background:${col};border:2.5px solid rgba(255,255,255,.75);box-shadow:0 2px 6px rgba(0,0,0,.4);opacity:${op}"></div>`});
+}
+
+function ghostIcon(){return L.divIcon({className:'',iconSize:[18,18],iconAnchor:[9,18],html:`<div style="width:18px;height:18px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:#c0392b;border:2px dashed rgba(255,255,255,.4);opacity:0.32"></div>`});}
+
+// ── GHOST MARKERS ─────────────────────────────────────
+function refreshGhostMarkers(){
+  Object.values(ghostMarkers).forEach(m=>appMap.removeLayer(m));
+  ghostMarkers={};
+  state.scout.filter(s=>!s.archived&&s.status==='Active').forEach(s=>{
+    const m=L.marker([s.lat,s.lng],{icon:ghostIcon(),interactive:false,zIndexOffset:-1000});
+    m.addTo(appMap);ghostMarkers[s.id]=m;
+  });
+}
+
+// ── SAVE SCOUT ─────────────────────────────────────────
+function saveScoutSite(){
+  if(!tempLatLng){alert('No location captured.');return;}
+  const isSLF=document.getElementById('s-type').value==='SLF';
+  const s={
+    id:Date.now(),
+    name:v('s-name')||'Unnamed site',
+    type:v('s-type'),
+    severity:v('s-severity'),
+    pest:v('s-pest'),
+    host:v('s-host'),
+    status:v('s-status'),
+    notes:v('s-notes'),
+    slf_stage:isSLF?v('s-slf-stage'):'',
+    slf_pop:isSLF?v('s-slf-pop'):'',
+    slf_ailan:isSLF?v('s-slf-ailan'):'',
+    lat:tempLatLng.lat,lng:tempLatLng.lng,
+    date:new Date().toISOString(),archived:false
+  };
+  state.scout.push(s);persist();addScoutMarker(s);renderAll();closeModal('modal-scout');syncAfterSave();
+}
+function clearScoutForm(){
+  ['s-name','s-pest','s-host','s-notes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('s-type').value='Insect Outbreak';
+  document.getElementById('s-severity').value='High';
+  document.getElementById('s-status').value='Active';
+  document.getElementById('slf-fields').classList.remove('show');
+}
+function addScoutMarker(s){const m=L.marker([s.lat,s.lng],{icon:scoutIcon(s)});m.on('click',()=>showScoutDetail(s.id));m.addTo(scoutMap);scoutMarkers[s.id]=m;}
+function refreshScoutIcon(s){const m=scoutMarkers[s.id];if(m)m.setIcon(scoutIcon(s));}
+
+// ── SAVE APPLICATION ───────────────────────────────────
+function saveAppRecord(){
+  if(!tempLatLng){alert('No location captured.');return;}
+  const interval=parseInt(document.getElementById('a-interval').value)||DEFAULT_INTERVAL;
+  const rei=parseInt(document.getElementById('a-rei').value)||0;
+  const a={
+    id:Date.now(),
+    name:v('a-name')||'Unnamed site',
+    product:v('a-product'),epa:v('a-epa'),ai:v('a-ai'),
+    rate:v('a-rate'),volume:v('a-volume'),
+    method:v('a-method'),interval,rei,
+    applicator:v('a-applicator'),
+    temp:v('a-temp'),wind:v('a-wind'),sky:v('a-sky'),
+    ppe:v('a-ppe'),notes:v('a-notes'),
+    lat:tempLatLng.lat,lng:tempLatLng.lng,
+    date:new Date().toISOString(),
+    complianceLogged:false,archived:false,
+    followupDone:false,needsReapply:false,followupNotes:'',followupDate:null
+  };
+  state.app.push(a);persist();addAppMarker(a);renderAll();closeModal('modal-app');syncAfterSave();
+  if(rei>0)showToast(`REI: ${rei} hrs. Re-entry after ${new Date(Date.now()+rei*3600000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}`);
+}
+function clearAppForm(){
+  ['a-name','a-product','a-epa','a-ai','a-rate','a-volume','a-interval','a-rei','a-applicator','a-temp','a-wind','a-ppe','a-notes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('a-sky').value='Clear';
+}
+function addAppMarker(a){const m=L.marker([a.lat,a.lng],{icon:appIcon(a)});m.on('click',()=>showAppDetail(a.id));m.addTo(appMap);appMarkers[a.id]=m;}
+function refreshAppIcon(a){const m=appMarkers[a.id];if(m)m.setIcon(appIcon(a));}
+
+// ── FOLLOWUP LOGIC ──────────────────────────────────────
+function followupDue(a){if(a.archived||a.followupDone||a.needsReapply)return false;return daysAgo(a.date)>=a.interval;}
+function followupOverdue(a){if(a.archived||a.followupDone||a.needsReapply)return false;return daysAgo(a.date)>=(a.interval+7);}
+function followupCount(){return state.app.filter(a=>followupDue(a)||a.needsReapply).length;}
+function daysAgo(d){return Math.floor((Date.now()-new Date(d))/86400000);}
+
+function renderFollowup(){
+  const scroll=document.getElementById('followup-scroll');
+  const due=state.app.filter(a=>followupDue(a));
+  const retreat=state.app.filter(a=>a.needsReapply&&!a.archived);
+  const recent=state.app.filter(a=>a.followupDone&&!a.archived&&daysAgo(a.followupDate)<7);
+  if(!due.length&&!retreat.length&&!recent.length){scroll.innerHTML='<div class="empty-followup">✓ No follow-ups due<br><span style="font-size:10px;margin-top:8px;display:block;color:var(--gray)">Reapplication checks are triggered by each product\'s interval</span></div>';return;}
+  let html='';
+  if(retreat.length){html+=`<div class="followup-section-title">⚠️ Needs Reapplication (${retreat.length})</div>`;retreat.forEach(a=>{html+=`<div class="followup-item needs-retreat" onclick="showFollowupDetail('${a.id}')"><div class="followup-name">${a.name}</div><div class="followup-meta">${a.product||'Product unspecified'} · Applied ${fmt(a.date)}${a.followupNotes?'<br><em style="opacity:.7">'+a.followupNotes+'</em>':''}</div><div style="margin-top:6px"><span class="chip chip-purple">Reapply</span></div></div>`;});}
+  if(due.length){const ov=due.filter(a=>followupOverdue(a));const nm=due.filter(a=>!followupOverdue(a));if(ov.length){html+=`<div class="followup-section-title">🔴 Overdue (${ov.length})</div>`;ov.forEach(a=>{html+=followupCard(a,true);});}if(nm.length){html+=`<div class="followup-section-title">🟡 Due for Check (${nm.length})</div>`;nm.forEach(a=>{html+=followupCard(a,false);});}}
+  if(recent.length){html+=`<div class="followup-section-title">✓ Recently Resolved</div>`;recent.forEach(a=>{html+=`<div class="followup-item checked"><div class="followup-name">${a.name}</div><div class="followup-meta">Checked ${fmt(a.followupDate)} · <span style="color:var(--green)">No reapplication needed</span></div></div>`;});}
+  scroll.innerHTML=html;
+}
+
+function followupCard(a,overdue){
+  const d=daysAgo(a.date);const int=a.interval||DEFAULT_INTERVAL;
+  return`<div class="followup-item${overdue?' overdue':''}" onclick="showFollowupDetail('${a.id}')"><div class="followup-name">${a.name}</div><div class="followup-meta">${a.product||'Unspecified'} · ${d} days since application (interval: ${int} days)</div><div style="margin-top:6px"><span class="chip ${overdue?'chip-red':'chip-orange'}">${overdue?'Overdue':'Due now'}</span></div></div>`;
+}
+
+function showFollowupDetail(id){
+  const a=state.app.find(x=>String(x.id)===String(id));if(!a)return;
+  document.getElementById('followup-detail-title').textContent='🔁 '+a.name;
+  document.getElementById('followup-detail-body').innerHTML=`
+    <table class="detail-table">
+      ${tr('Applied',fmt(a.date)+' ('+daysAgo(a.date)+' days ago)')}
+      ${tr('Product',a.product||'—')}${tr('Active Ingredient',a.ai||'—')}
+      ${tr('Method',a.method)}${tr('Interval',a.interval+' days')}
+      ${a.followupNotes?tr('Last notes',a.followupNotes):''}
+    </table>
+    <div style="margin-top:14px;">
+      <label style="display:block;margin-bottom:6px;">Assessment notes</label>
+      <textarea id="followup-notes-input" placeholder="Pest levels, plant response, conditions…" style="width:100%;height:60px;background:var(--mid);border:1px solid var(--light);border-radius:4px;color:var(--cream);font-size:14px;padding:7px 8px;font-family:inherit;resize:none;">${a.followupNotes||''}</textarea>
+    </div>`;
+  const acts=document.getElementById('followup-detail-actions');acts.innerHTML='';
+  if(!a.followupDone&&!a.needsReapply){
+    mkbtn(acts,'✅ No Reapplication Needed','btn-green btn-sm',()=>markSuccess(a.id));
+    mkbtn(acts,'⚠️ Reapplication Needed','btn-purple btn-sm',()=>markReapply(a.id));
+  }else if(a.needsReapply){
+    mkbtn(acts,'✅ Reapplication Complete','btn-green btn-sm',()=>markReapplyDone(a.id));
+  }
+  mkbtn(acts,'Close','btn-ghost btn-sm',()=>closeModal('modal-followup-detail'),true);
+  openModal('modal-followup-detail');
+}
+
+function getFNotes(){return document.getElementById('followup-notes-input')?.value?.trim()||'';}
+
+function markSuccess(id){const a=state.app.find(x=>String(x.id)===String(id));if(!a)return;a.followupDone=true;a.needsReapply=false;a.followupDate=new Date().toISOString();a.followupNotes=getFNotes();// archive nearby active scout sites within ~50m
+const nearby=state.scout.filter(s=>!s.archived&&s.status==='Active'&&distance(s.lat,s.lng,a.lat,a.lng)<0.05);nearby.forEach(s=>{s.status='Resolved';refreshScoutIcon(s);});persist();refreshAppIcon(a);renderAll();closeModal('modal-followup-detail');showToast(nearby.length?`Logged. ${nearby.length} site(s) marked Resolved.`:'Assessment logged.');syncAfterSave();}
+function markReapply(id){const a=state.app.find(x=>String(x.id)===String(id));if(!a)return;a.needsReapply=true;a.followupDone=false;a.followupDate=new Date().toISOString();a.followupNotes=getFNotes();persist();refreshAppIcon(a);renderAll();closeModal('modal-followup-detail');showToast('Flagged for reapplication.');syncAfterSave();}
+function markReapplyDone(id){const a=state.app.find(x=>String(x.id)===String(id));if(!a)return;a.needsReapply=false;a.followupDone=true;a.followupDate=new Date().toISOString();a.followupNotes=getFNotes();persist();refreshAppIcon(a);renderAll();closeModal('modal-followup-detail');showToast('Reapplication logged.');syncAfterSave();}
+function distance(lat1,lng1,lat2,lng2){const R=6371,dLat=(lat2-lat1)*Math.PI/180,dLng=(lng2-lng1)*Math.PI/180;const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));}
+
+// ── SCOUT DETAIL ────────────────────────────────────────
+function showScoutDetail(id){
+  const s=state.scout.find(x=>x.id===id);if(!s)return;
+  document.getElementById('detail-title').textContent='🔎 '+s.name;
+  const statusColors={Active:'chip-red',Monitored:'chip-teal',Resolved:'chip-gray'};
+  const sevColors={Low:'chip-yellow',Medium:'chip-orange',High:'chip-red',Critical:'chip-purple'};
+  document.getElementById('detail-body').innerHTML=`
+    <div style="margin-bottom:10px;display:flex;gap:5px;flex-wrap:wrap;">
+      <span class="chip ${sevColors[s.severity]||'chip-orange'}">${s.severity}</span>
+      <span class="chip ${statusColors[s.status]||'chip-gray'}">${s.status}</span>
+      <span class="chip chip-blue">${s.type}</span>
+      ${s.archived?'<span class="chip chip-archived">Archived</span>':''}
+    </div>
+    <table class="detail-table">
+      ${tr('Flagged',fmt(s.date))}
+      ${tr('Pest/Pathogen',s.pest||'—')}
+      ${tr('Host Plant',s.host||'—')}
+      ${s.type==='SLF'?tr('SLF Life Stage',s.slf_stage||'—'):''}
+      ${s.type==='SLF'?tr('SLF Population',s.slf_pop||'—'):''}
+      ${s.type==='SLF'?tr('Ailanthus Nearby',s.slf_ailan||'—'):''}
+      ${tr('Coords',s.lat.toFixed(5)+', '+s.lng.toFixed(5))}
+      ${s.notes?tr('Notes',s.notes):''}
+    </table>`;
+  const acts=document.getElementById('detail-actions');acts.innerHTML='';
+  if(!s.archived){
+    // Status change buttons
+    if(s.status==='Active'){mkbtn(acts,'👁 Set Monitored','btn-ghost btn-sm',()=>{s.status='Monitored';persist();refreshScoutIcon(s);renderAll();closeModal('modal-detail');syncAfterSave();});}
+    if(s.status!=='Resolved'){mkbtn(acts,'✅ Mark Resolved','btn-green btn-sm',()=>{s.status='Resolved';persist();refreshScoutIcon(s);renderAll();closeModal('modal-detail');syncAfterSave();});}
+    mkbtn(acts,'📁 Archive','btn-warn btn-sm',()=>{s.archived=true;persist();refreshScoutIcon(s);renderAll();closeModal('modal-detail');syncAfterSave();});
+    mkbtn(acts,'🗑 Delete','btn-danger btn-sm',()=>delScout(id));
+  }else{mkbtn(acts,'↩ Restore','btn-ghost btn-sm',()=>{s.archived=false;persist();refreshScoutIcon(s);renderAll();closeModal('modal-detail');closeModal('modal-archived');syncAfterSave();});}
+  mkbtn(acts,'Close','btn-ghost btn-sm',()=>closeModal('modal-detail'),true);
+  openModal('modal-detail');
+}
+function delScout(id){if(!confirm('Delete permanently?'))return;state.scout=state.scout.filter(s=>s.id!==id);if(scoutMarkers[id]){scoutMap.removeLayer(scoutMarkers[id]);delete scoutMarkers[id];}persist();renderAll();closeModal('modal-detail');syncAfterSave();}
+
+// ── APP DETAIL ──────────────────────────────────────────
+function showAppDetail(id){
+  const a=state.app.find(x=>x.id===id);if(!a)return;
+  document.getElementById('detail-title').textContent='💉 '+a.name;
+  let chips=`<span class="chip ${a.needsReapply?'chip-purple':a.complianceLogged?'chip-archived':'chip-blue'}">${a.needsReapply?'Needs Reapplication':a.complianceLogged?'Compliance Filed':'Pending Compliance'}</span>`;
+  if(a.followupDone&&!a.needsReapply)chips+=` <span class="chip chip-green">✓ Assessed</span>`;
+  document.getElementById('detail-body').innerHTML=`
+    <div style="margin-bottom:10px">${chips}${a.archived?'<span class="chip chip-archived" style="margin-left:5px">Archived</span>':''}</div>
+    <table class="detail-table">
+      ${tr('Date',fmt(a.date))}${tr('Product',a.product||'—')}${tr('EPA Reg #',a.epa||'—')}
+      ${tr('Active Ingredient',a.ai||'—')}${tr('Method',a.method)}
+      ${tr('Volume',a.volume||'—')}${tr('Mix Rate',a.rate||'—')}
+      ${tr('Reapply Interval',a.interval+' days')}${tr('REI',a.rei?a.rei+' hrs':'—')}
+      ${tr('Applicator',a.applicator||'—')}
+      ${tr('Conditions',(a.temp?a.temp+'°F ':'')+(a.wind?a.wind+' mph ':'')+(a.sky||''))}
+      ${tr('PPE',a.ppe||'—')}
+      ${tr('Coords',a.lat.toFixed(5)+', '+a.lng.toFixed(5))}
+      ${a.followupNotes?tr('Assessment',a.followupNotes):''}
+      ${a.notes?tr('Notes',a.notes):''}
+    </table>`;
+  const acts=document.getElementById('detail-actions');acts.innerHTML='';
+  if(!a.archived){
+    if(!a.complianceLogged)mkbtn(acts,'✅ Compliance Filed','btn-primary btn-sm',()=>{a.complianceLogged=true;persist();refreshAppIcon(a);renderAll();closeModal('modal-detail');syncAfterSave();});
+    if(followupDue(a)||a.needsReapply)mkbtn(acts,'🔁 Log Assessment','btn-warn btn-sm',()=>{closeModal('modal-detail');showFollowupDetail(a.id);});
+    mkbtn(acts,'📁 Archive','btn-ghost btn-sm',()=>{a.archived=true;persist();refreshAppIcon(a);renderAll();closeModal('modal-detail');syncAfterSave();});
+    mkbtn(acts,'🗑 Delete','btn-danger btn-sm',()=>delApp(id));
+  }else{mkbtn(acts,'↩ Restore','btn-ghost btn-sm',()=>{a.archived=false;persist();refreshAppIcon(a);renderAll();closeModal('modal-detail');closeModal('modal-archived');syncAfterSave();});}
+  mkbtn(acts,'Close','btn-ghost btn-sm',()=>closeModal('modal-detail'),true);
+  openModal('modal-detail');
+}
+function delApp(id){if(!confirm('Delete permanently?'))return;state.app=state.app.filter(a=>a.id!==id);if(appMarkers[id]){appMap.removeLayer(appMarkers[id]);delete appMarkers[id];}persist();renderAll();closeModal('modal-detail');syncAfterSave();}
+
+// ── RENDER ──────────────────────────────────────────────
+function renderAll(){renderScoutList();renderAppList();updateCounts();refreshGhostMarkers();}
+
+function renderScoutList(){
+  const el=document.getElementById('scout-list');
+  const items=state.scout.filter(s=>!s.archived).sort((a,b)=>{const so={Active:0,Monitored:1,Resolved:2};return(so[a.status]||0)-(so[b.status]||0)||new Date(b.date)-new Date(a.date);});
+  if(!items.length){el.innerHTML='<div class="empty-state">No sites flagged yet</div>';return;}
+  const sevClass={Low:'severity-low',Medium:'severity-medium',High:'severity-high',Critical:'severity-critical'};
+  el.innerHTML=items.map(s=>`<div class="site-item ${sevClass[s.severity]||''} status-${(s.status||'active').toLowerCase()}" onclick="showScoutDetail(${s.id})">
+    <div class="site-info"><div class="site-name">${s.name}</div><div class="site-meta">${s.type} · ${s.pest||'Pest unspecified'} · ${s.status}</div></div>
+    <span class="chip ${s.status==='Resolved'?'chip-gray':s.status==='Monitored'?'chip-teal':'chip-red'}">${s.status}</span>
+  </div>`).join('');
+}
+
+function renderAppList(){
+  const el=document.getElementById('app-list');
+  const items=state.app.filter(a=>!a.archived).sort((a,b)=>new Date(b.date)-new Date(a.date));
+  if(!items.length){el.innerHTML='<div class="empty-state">No applications logged yet</div>';return;}
+  el.innerHTML=items.map(a=>{const chip=a.needsReapply?'<span class="chip chip-purple">Reapply</span>':a.complianceLogged?'<span class="chip chip-archived">Filed</span>':'<span class="chip chip-blue">Pending</span>';return`<div class="app-log-item ${a.complianceLogged?'compliance-logged':''} ${a.needsReapply?'needs-retreat':''}" onclick="showAppDetail(${a.id})"><div class="log-info"><div class="log-name">${a.name}</div><div class="log-meta">${a.product||'Unspecified'} · ${a.method} · ${fmt(a.date)}</div></div>${chip}</div>`;}).join('');
+}
+
+function updateCounts(){
+  document.getElementById('scout-count').textContent=state.scout.filter(s=>!s.archived&&s.status!=='Resolved').length;
+  document.getElementById('app-count').textContent=state.app.filter(a=>!a.archived&&!a.complianceLogged).length;
+  const fc=followupCount();
+  const fcEl=document.getElementById('followup-count');
+  fcEl.textContent=fc;fcEl.className='tab-count'+(fc>0?' urgent':'');
+}
+
+// ── ARCHIVED ────────────────────────────────────────────
+function showArchived(type){
+  document.getElementById('archived-title').textContent=type==='scout'?'📁 Archived Scout Sites':'📁 Archived Applications';
+  const items=(type==='scout'?state.scout:state.app).filter(x=>x.archived);
+  const fn=type==='scout'?'showScoutDetail':'showAppDetail';
+  document.getElementById('archived-body').innerHTML=!items.length?'<div class="empty-state">Nothing archived</div>':items.map(x=>`<div class="site-item archived" onclick="closeModal('modal-archived');${fn}(${x.id})"><div class="site-info"><div class="site-name">${x.name}</div><div class="site-meta">${fmt(x.date)}</div></div><span class="chip chip-archived">Archived</span></div>`).join('');
+  openModal('modal-archived');
+}
+
+// ── GPS ─────────────────────────────────────────────────
+function locateMe(tab){if(!navigator.geolocation){alert('Geolocation not available.');return;}navigator.geolocation.getCurrentPosition(p=>{const ll=[p.coords.latitude,p.coords.longitude];(tab==='scout'?scoutMap:appMap).setView(ll,19);},()=>alert('Could not get location.'));}
+
+// ── CSV ─────────────────────────────────────────────────
+function exportCSV(type){
+  let h,rows;
+  if(type==='scout'){
+    h=['ID','Name','Type','Severity','Pest','Host','Status','SLF_Stage','SLF_Pop','SLF_Ailanthus','Notes','Lat','Lng','Date','Archived'];
+    rows=state.scout.map(s=>[s.id,s.name,s.type,s.severity,s.pest,s.host,s.status,s.slf_stage,s.slf_pop,s.slf_ailan,s.notes,s.lat,s.lng,s.date,s.archived]);
+  }else{
+    h=['ID','Name','Product','EPA_Reg','ActiveIngredient','Rate','Volume','Method','Interval_Days','REI_Hrs','Applicator','Temp_F','Wind_mph','Sky','PPE','Notes','Lat','Lng','Date','ComplianceLogged','Archived','FollowupDone','NeedsReapply','FollowupDate','FollowupNotes'];
+    rows=state.app.map(a=>[a.id,a.name,a.product,a.epa,a.ai,a.rate,a.volume,a.method,a.interval,a.rei,a.applicator,a.temp,a.wind,a.sky,a.ppe,a.notes,a.lat,a.lng,a.date,a.complianceLogged,a.archived,a.followupDone,a.needsReapply,a.followupDate,a.followupNotes]);
+  }
+  const csv=[h,...rows].map(r=>r.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download=`umw_ipm_${type}_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+function triggerImport(type){document.getElementById('import-'+type).value='';document.getElementById('import-'+type).click();}
+function importCSV(event,type){const file=event.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=function(e){const text=e.target.result;const rows=parseCSV(text);if(rows.length<2){alert('CSV appears empty.');return;}const headers=rows[0].map(h=>h.trim().toLowerCase());const dataRows=rows.slice(1).filter(r=>r.some(c=>c.trim()!==''));let added=0,skipped=0;const latI=headers.indexOf('lat'),lngI=headers.indexOf('lng'),dateI=headers.indexOf('date');if(latI===-1||lngI===-1){alert('Missing Lat/Lng columns.');return;}dataRows.forEach(row=>{const lat=parseFloat(row[latI]),lng=parseFloat(row[lngI]),date=row[dateI]?row[dateI].trim():new Date().toISOString();if(isNaN(lat)||isNaN(lng)){skipped++;return;}const pool=type==='scout'?state.scout:state.app;const isDupe=pool.some(x=>Math.abs(x.lat-lat)<0.00001&&Math.abs(x.lng-lng)<0.00001&&x.date===date);if(isDupe){skipped++;return;}if(type==='scout'){const s={id:Date.now()+Math.random(),name:row[headers.indexOf('name')]?.trim()||'Imported',type:row[headers.indexOf('type')]?.trim()||'Insect Outbreak',severity:row[headers.indexOf('severity')]?.trim()||'Medium',pest:row[headers.indexOf('pest')]?.trim()||'',host:row[headers.indexOf('host')]?.trim()||'',status:row[headers.indexOf('status')]?.trim()||'Active',notes:row[headers.indexOf('notes')]?.trim()||'',slf_stage:'',slf_pop:'',slf_ailan:'',lat,lng,date,archived:false};state.scout.push(s);addScoutMarker(s);}else{const a={id:Date.now()+Math.random(),name:row[headers.indexOf('name')]?.trim()||'Imported',product:row[headers.indexOf('product')]?.trim()||'',epa:row[headers.indexOf('epa_reg')]?.trim()||'',ai:row[headers.indexOf('activeingredient')]?.trim()||'',rate:row[headers.indexOf('rate')]?.trim()||'',volume:row[headers.indexOf('volume')]?.trim()||'',method:row[headers.indexOf('method')]?.trim()||'',interval:parseInt(row[headers.indexOf('interval_days')])||DEFAULT_INTERVAL,rei:parseInt(row[headers.indexOf('rei_hrs')])||0,applicator:row[headers.indexOf('applicator')]?.trim()||'',temp:'',wind:'',sky:'',ppe:'',notes:row[headers.indexOf('notes')]?.trim()||'',lat,lng,date,complianceLogged:false,archived:false,followupDone:false,needsReapply:false,followupNotes:'',followupDate:null};state.app.push(a);addAppMarker(a);}added++;});persist();renderAll();showToast(added>0?`Imported ${added} record${added!==1?'s':''}.${skipped?' '+skipped+' skipped.':''}`:`No new records — ${skipped} duplicate(s).`);syncAfterSave();};reader.readAsText(file);}
+function parseCSV(text){const rows=[];let row=[],field='',inQuote=false;for(let i=0;i<text.length;i++){const c=text[i],next=text[i+1];if(inQuote){if(c==='"'&&next==='"'){field+='"';i++;}else if(c==='"'){inQuote=false;}else{field+=c;}}else{if(c==='"'){inQuote=true;}else if(c===','){row.push(field);field='';}else if(c==='\n'||(c==='\r'&&next==='\n')){row.push(field);field='';if(row.some(f=>f!==''))rows.push(row);row=[];if(c==='\r')i++;}else{field+=c;}}}if(field||row.length){row.push(field);if(row.some(f=>f!==''))rows.push(row);}return rows;}
+
+// ── HELPERS ─────────────────────────────────────────────
+function v(id){return document.getElementById(id).value.trim();}
+function fmt(iso){if(!iso)return'—';return new Date(iso).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}
+function tr(label,val){return`<tr><td>${label}</td><td>${val}</td></tr>`;}
+function mkbtn(parent,text,cls,handler,stretch){const b=document.createElement('button');b.className='btn '+cls;if(stretch)b.style.flex='1';b.textContent=text;b.onclick=handler;parent.appendChild(b);}
+
+// ── PERSIST ─────────────────────────────────────────────
+function persist(){try{localStorage.setItem('umw_ipm_scout',JSON.stringify(state.scout));localStorage.setItem('umw_ipm_app',JSON.stringify(state.app));}catch(e){}}
+function loadData(){try{const s=localStorage.getItem('umw_ipm_scout'),a=localStorage.getItem('umw_ipm_app');if(s)state.scout=JSON.parse(s);if(a)state.app=JSON.parse(a);}catch(e){}}
+
+// ── BOOT ────────────────────────────────────────────────
+loadData();
+initMaps();
+state.scout.forEach(s=>addScoutMarker(s));
+state.app.forEach(a=>addAppMarker(a));
+renderAll();
+
+// ── GOOGLE INIT ─────────────────────────────────────────
+function initGoogleWhenReady(){
+  const gapiPresent=typeof gapi!=='undefined';
+  const gsiPresent=typeof google!=='undefined'&&google.accounts;
+  if(gapiPresent&&!gapiReady){gapi.load('client',async()=>{try{await gapi.client.init({apiKey:GOOG_API_KEY,discoveryDocs:['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']});gapiReady=true;if(gsiReady)tryAutoLoad();}catch(e){console.warn('GAPI init error',e);}});}
+  if(gsiPresent&&!gsiReady){tokenClient=google.accounts.oauth2.initTokenClient({client_id:GOOG_CLIENT_ID,scope:DRIVE_SCOPES,callback:(resp)=>{if(resp.error){setSyncBtn('error','☁ Error');return;}accessToken=resp.access_token;gapi.client.setToken({access_token:accessToken});setSyncBtn('signed-in','⟳ Sync Now');syncFromDrive();}});gsiReady=true;if(gapiReady)tryAutoLoad();}
+  if(!gapiReady||!gsiReady){setTimeout(initGoogleWhenReady,300);}
+}
+initGoogleWhenReady();
+</script>
+</body>
+</html>
