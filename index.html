@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -228,11 +227,31 @@
       <div class="form-group"><label>Mix Rate / Conc.</label><input id="herb-rate" type="text" placeholder="e.g. 20% v/v in basal oil"></div>
       <div class="form-group"><label>Target Species</label><input id="herb-target" type="text" placeholder="e.g. Ailanthus altissima"></div>
     </div>
-    <div class="form-row"><div class="form-group"><label>Applicator</label><input id="herb-applicator" type="text" placeholder="Name / License #"></div></div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Applicator</label>
+        <select id="herb-applicator-select" onchange="handleApplicatorSelect()">
+          <option value="John Careatti/175894">John Careatti — #175894</option>
+          <option value="Andrew Baldacci/94325-6">Andrew Baldacci — #94325-6</option>
+          <option value="Robert Trowbridge/94332-T">Robert Trowbridge — #94332-T</option>
+          <option value="__other__">Other…</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row" id="herb-applicator-other-row" style="display:none">
+      <div class="form-group"><label>Other Applicator / License #</label><input id="herb-applicator-other" type="text" placeholder="Name / License #"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Application Date</label><input id="herb-date" type="date"></div>
+      <div class="form-group" style="max-width:130px"><label>Time</label><input id="herb-time" type="time"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Area Treated (sq ft)</label><input id="herb-sqft" type="number" placeholder="e.g. 500" min="0"></div>
+    </div>
     <div class="form-row"><div class="form-group"><label>Notes</label><textarea id="herb-notes" placeholder="Weather, conditions, observations…"></textarea></div></div>
     <div class="btn-row">
       <button class="btn btn-warn" style="flex:2" onclick="saveHerbApp()">Log Application</button>
-      <button class="btn btn-ghost" style="flex:1" onclick="closeModal('modal-herb')">Cancel</button>
+      <button class="btn btn-ghost" style="flex:1" onclick="cancelHerbModal()">Cancel</button>
     </div>
   </div>
 </div>
@@ -365,8 +384,31 @@ function addScoutMarker(s){const m=L.marker([s.lat,s.lng],{icon:weedIcon(ageClas
 function refreshScoutIcon(s){const m=scoutMarkers[s.id];if(m)m.setIcon(weedIcon(ageClass(s.date),s.archived));}
 
 // ── SAVE HERB ─────────────────────────────────────────────
-function saveHerbApp(){if(!tempLatLng){alert('No location captured.');return;}const a={id:Date.now(),name:v('herb-name')||'Unnamed site',product:v('herb-product'),epa:v('herb-epa'),method:v('herb-method'),volume:v('herb-volume'),rate:v('herb-rate'),target:v('herb-target'),applicator:v('herb-applicator'),notes:v('herb-notes'),lat:tempLatLng.lat,lng:tempLatLng.lng,date:new Date().toISOString(),complianceLogged:false,archived:false,followupDone:false,needsRetreat:false,followupNotes:'',followupDate:null};state.herb.push(a);persist();addHerbMarker(a);renderAll();closeModal('modal-herb');syncAfterSave();}
-function clearHerbForm(){['herb-name','herb-product','herb-epa','herb-volume','herb-rate','herb-target','herb-applicator','herb-notes'].forEach(id=>document.getElementById(id).value='');}
+function saveHerbApp(){if(!tempLatLng){alert('No location captured.');return;}
+  const applicatorSel=document.getElementById('herb-applicator-select').value;
+  const applicator=applicatorSel==='__other__'?v('herb-applicator-other'):applicatorSel;
+  const dateVal=document.getElementById('herb-date').value;
+  const timeVal=document.getElementById('herb-time').value;
+  const sqft=document.getElementById('herb-sqft').value;
+  // Build ISO date from date+time fields, fallback to now
+  let appDate;
+  if(dateVal){appDate=new Date(dateVal+'T'+(timeVal||'00:00')).toISOString();}else{appDate=new Date().toISOString();}
+  const a={id:Date.now(),name:v('herb-name')||'Unnamed site',product:v('herb-product'),epa:v('herb-epa'),method:v('herb-method'),volume:v('herb-volume'),rate:v('herb-rate'),target:v('herb-target'),applicator,sqft:sqft||'',notes:v('herb-notes'),lat:tempLatLng.lat,lng:tempLatLng.lng,date:appDate,complianceLogged:false,archived:false,followupDone:false,needsRetreat:false,followupNotes:'',followupDate:null};
+  state.herb.push(a);persist();addHerbMarker(a);renderAll();closeModal('modal-herb');syncAfterSave();}
+function clearHerbForm(){
+  ['herb-name','herb-product','herb-epa','herb-volume','herb-rate','herb-target','herb-notes','herb-applicator-other','herb-sqft'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('herb-applicator-select').value='John Careatti/175894';
+  document.getElementById('herb-applicator-other-row').style.display='none';
+  // Default date to today, time to current time
+  const now=new Date();
+  document.getElementById('herb-date').value=now.toISOString().slice(0,10);
+  document.getElementById('herb-time').value=now.toTimeString().slice(0,5);
+}
+function handleApplicatorSelect(){
+  const other=document.getElementById('herb-applicator-select').value==='__other__';
+  document.getElementById('herb-applicator-other-row').style.display=other?'':'none';
+  if(other)document.getElementById('herb-applicator-other').focus();
+}
 function addHerbMarker(a){const m=L.marker([a.lat,a.lng],{icon:herbIcon(a)});m.on('click',()=>showHerbDetail(a.id));m.addTo(herbMap);herbMarkers[a.id]=m;}
 function refreshHerbIcon(a){const m=herbMarkers[a.id];if(m)m.setIcon(herbIcon(a));}
 
@@ -528,16 +570,84 @@ function delScout(id){if(!confirm('Delete permanently?'))return;state.scout=stat
 function showHerbDetail(id){const a=state.herb.find(x=>x.id===id);if(!a)return;document.getElementById('detail-title').textContent='🧪 '+a.name;
 let statusChip=`<span class="chip ${a.needsRetreat?'chip-purple':a.complianceLogged?'chip-archived':'chip-green'}">${a.needsRetreat?'Needs Retreat':a.complianceLogged?'Compliance Filed':'Pending Compliance'}</span>`;
 if(a.followupDone&&!a.needsRetreat)statusChip+=` <span class="chip chip-green" style="margin-left:4px">✓ Burndown OK</span>`;
-document.getElementById('detail-body').innerHTML=`<div style="margin-bottom:10px">${statusChip}${a.archived?'<span class="chip chip-archived" style="margin-left:5px">Archived</span>':''}</div><table class="detail-table">${tr('Date',fmt(a.date))}${tr('Product',a.product||'—')}${tr('EPA Reg #',a.epa||'—')}${tr('Method',a.method)}${tr('Volume',a.volume||'—')}${tr('Mix Rate',a.rate||'—')}${tr('Target',a.target||'—')}${tr('Applicator',a.applicator||'—')}${tr('Coords',a.lat.toFixed(5)+', '+a.lng.toFixed(5))}${a.followupNotes?tr('Follow-up',a.followupNotes):''}${a.notes?tr('Notes',a.notes):''}</table>`;
+document.getElementById('detail-body').innerHTML=`<div style="margin-bottom:10px">${statusChip}${a.archived?'<span class="chip chip-archived" style="margin-left:5px">Archived</span>':''}</div><table class="detail-table">${tr('Date',fmtDateTime(a.date))}${tr('Product',a.product||'—')}${tr('EPA Reg #',a.epa||'—')}${tr('Method',a.method)}${tr('Volume',a.volume||'—')}${tr('Mix Rate',a.rate||'—')}${tr('Target',a.target||'—')}${tr('Applicator',a.applicator||'—')}${a.sqft?tr('Area Treated',a.sqft+' sq ft'):''}${tr('Coords',a.lat.toFixed(5)+', '+a.lng.toFixed(5))}${a.followupNotes?tr('Follow-up',a.followupNotes):''}${a.notes?tr('Notes',a.notes):''}</table>`;
 const acts=document.getElementById('detail-actions');acts.innerHTML='';
 if(!a.archived){
   if(!a.complianceLogged)mkbtn(acts,'✅ Compliance Filed','btn-primary btn-sm',()=>{a.complianceLogged=true;persist();refreshHerbIcon(a);renderAll();closeModal('modal-detail');syncAfterSave();});
   if(followupDue(a)||a.needsRetreat)mkbtn(acts,'🔍 Log Follow-up','btn-warn btn-sm',()=>{closeModal('modal-detail');showFollowupDetail(a.id);});
+  mkbtn(acts,'✏️ Edit','btn-ghost btn-sm',()=>{closeModal('modal-detail');openHerbEdit(id);});
   mkbtn(acts,'📁 Archive','btn-ghost btn-sm',()=>{a.archived=true;persist();refreshHerbIcon(a);renderAll();closeModal('modal-detail');syncAfterSave();});
   mkbtn(acts,'🗑 Delete','btn-danger btn-sm',()=>delHerb(id));
 }else{mkbtn(acts,'↩ Restore','btn-ghost btn-sm',()=>{a.archived=false;persist();refreshHerbIcon(a);renderAll();closeModal('modal-detail');closeModal('modal-archived');syncAfterSave();});}
 mkbtn(acts,'Close','btn-ghost btn-sm',()=>closeModal('modal-detail'),true);openModal('modal-detail');}
-function delHerb(id){if(!confirm('Delete permanently?'))return;state.herb=state.herb.filter(a=>a.id!==id);if(herbMarkers[id]){herbMap.removeLayer(herbMarkers[id]);delete herbMarkers[id];}persist();renderAll();closeModal('modal-detail');syncAfterSave();}
+
+function openHerbEdit(id){
+  const a=state.herb.find(x=>x.id===id);if(!a)return;
+  // Populate the herb modal with existing data
+  document.getElementById('herb-name').value=a.name||'';
+  document.getElementById('herb-product').value=a.product||'';
+  document.getElementById('herb-epa').value=a.epa||'';
+  document.getElementById('herb-method').value=a.method||'Basal bark';
+  document.getElementById('herb-volume').value=a.volume||'';
+  document.getElementById('herb-rate').value=a.rate||'';
+  document.getElementById('herb-target').value=a.target||'';
+  document.getElementById('herb-notes').value=a.notes||'';
+  document.getElementById('herb-sqft').value=a.sqft||'';
+  // Date and time
+  const d=new Date(a.date);
+  document.getElementById('herb-date').value=d.toISOString().slice(0,10);
+  document.getElementById('herb-time').value=d.toTimeString().slice(0,5);
+  // Applicator — check if it matches a preset
+  const presets=['John Careatti/175894','Andrew Baldacci/94325-6','Robert Trowbridge/94332-T'];
+  if(presets.includes(a.applicator)){
+    document.getElementById('herb-applicator-select').value=a.applicator;
+    document.getElementById('herb-applicator-other-row').style.display='none';
+  }else{
+    document.getElementById('herb-applicator-select').value='__other__';
+    document.getElementById('herb-applicator-other').value=a.applicator||'';
+    document.getElementById('herb-applicator-other-row').style.display='';
+  }
+  // Change the modal title and save button to indicate edit mode
+  document.querySelector('#modal-herb .modal-title').textContent='✏️ Edit Application';
+  document.querySelector('#modal-herb .btn-warn').textContent='Save Changes';
+  document.querySelector('#modal-herb .btn-warn').onclick=()=>saveHerbEdit(id);
+  openModal('modal-herb');
+}
+
+function saveHerbEdit(id){
+  const a=state.herb.find(x=>x.id===id);if(!a)return;
+  const applicatorSel=document.getElementById('herb-applicator-select').value;
+  const applicator=applicatorSel==='__other__'?v('herb-applicator-other'):applicatorSel;
+  const dateVal=document.getElementById('herb-date').value;
+  const timeVal=document.getElementById('herb-time').value;
+  let appDate;
+  if(dateVal){appDate=new Date(dateVal+'T'+(timeVal||'00:00')).toISOString();}else{appDate=a.date;}
+  // Update in place — preserve compliance/followup state
+  a.name=v('herb-name')||a.name;
+  a.product=v('herb-product');a.epa=v('herb-epa');a.method=v('herb-method');
+  a.volume=v('herb-volume');a.rate=v('herb-rate');a.target=v('herb-target');
+  a.applicator=applicator;a.sqft=v('herb-sqft');a.notes=v('herb-notes');a.date=appDate;
+  persist();refreshHerbIcon(a);renderAll();
+  // Reset modal title and button back to default
+  document.querySelector('#modal-herb .modal-title').textContent='🧪 Log Herbicide Application';
+  document.querySelector('#modal-herb .btn-warn').textContent='Log Application';
+  document.querySelector('#modal-herb .btn-warn').onclick=saveHerbApp;
+  closeModal('modal-herb');
+  showToast('Application record updated.');
+  syncAfterSave();
+}
+function cancelHerbModal(){
+  document.querySelector('#modal-herb .modal-title').textContent='🧪 Log Herbicide Application';
+  document.querySelector('#modal-herb .btn-warn').textContent='Log Application';
+  document.querySelector('#modal-herb .btn-warn').onclick=saveHerbApp;
+  closeModal('modal-herb');
+}
+function delHerb(id){
+  if(!confirm('Delete permanently?'))return;
+  state.herb=state.herb.filter(a=>a.id!==id);
+  if(herbMarkers[id]){herbMap.removeLayer(herbMarkers[id]);delete herbMarkers[id];}
+  persist();renderAll();closeModal('modal-detail');syncAfterSave();
+}
 
 // ── RENDER ALL ────────────────────────────────────────────
 function renderAll(){renderScoutList();renderHerbList();updateCounts();refreshGhostMarkers();}
@@ -562,7 +672,7 @@ function showArchived(type){document.getElementById('archived-title').textConten
 function locateMe(tab){if(!navigator.geolocation){alert('Geolocation not available.');return;}navigator.geolocation.getCurrentPosition(p=>{const ll=[p.coords.latitude,p.coords.longitude];(tab==='scout'?scoutMap:herbMap).setView(ll,19);},()=>alert('Could not get location.'));}
 
 // ── CSV ───────────────────────────────────────────────────
-function exportCSV(type){let h,rows;if(type==='scout'){h=['ID','Name','Species','Density','Treatment','Notes','Lat','Lng','Date','Archived'];rows=state.scout.map(s=>[s.id,s.name,s.species,s.density,s.treatment,s.notes,s.lat,s.lng,s.date,s.archived]);}else{h=['ID','Name','Product','EPA_Reg','Method','Volume','Rate','Target','Applicator','Notes','Lat','Lng','Date','ComplianceLogged','Archived','FollowupDone','NeedsRetreat','FollowupDate','FollowupNotes'];rows=state.herb.map(a=>[a.id,a.name,a.product,a.epa,a.method,a.volume,a.rate,a.target,a.applicator,a.notes,a.lat,a.lng,a.date,a.complianceLogged,a.archived,a.followupDone,a.needsRetreat,a.followupDate,a.followupNotes]);}const csv=[h,...rows].map(r=>r.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=`umw_${type}_${new Date().toISOString().slice(0,10)}.csv`;a.click();}
+function exportCSV(type){let h,rows;if(type==='scout'){h=['ID','Name','Species','Density','Treatment','Notes','Lat','Lng','Date','Archived'];rows=state.scout.map(s=>[s.id,s.name,s.species,s.density,s.treatment,s.notes,s.lat,s.lng,s.date,s.archived]);}else{h=['ID','Name','Product','EPA_Reg','Method','Volume','Rate','Target','Applicator','SqFt','Notes','Lat','Lng','Date','ComplianceLogged','Archived','FollowupDone','NeedsRetreat','FollowupDate','FollowupNotes'];rows=state.herb.map(a=>[a.id,a.name,a.product,a.epa,a.method,a.volume,a.rate,a.target,a.applicator,a.sqft||'',a.notes,a.lat,a.lng,a.date,a.complianceLogged,a.archived,a.followupDone,a.needsRetreat,a.followupDate,a.followupNotes]);}const csv=[h,...rows].map(r=>r.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=`umw_${type}_${new Date().toISOString().slice(0,10)}.csv`;a.click();}
 function triggerImport(type){document.getElementById('import-'+type).value='';document.getElementById('import-'+type).click();}
 function importCSV(event,type){const file=event.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=function(e){const text=e.target.result;const rows=parseCSV(text);if(rows.length<2){alert('CSV appears empty or unreadable.');return;}const headers=rows[0].map(h=>h.trim().toLowerCase());const dataRows=rows.slice(1).filter(r=>r.some(c=>c.trim()!==''));let added=0,skipped=0;if(type==='scout'){const idx={name:headers.indexOf('name'),species:headers.indexOf('species'),density:headers.indexOf('density'),treatment:headers.indexOf('treatment'),notes:headers.indexOf('notes'),lat:headers.indexOf('lat'),lng:headers.indexOf('lng'),date:headers.indexOf('date'),archived:headers.indexOf('archived')};if(idx.lat===-1||idx.lng===-1){alert('Missing Lat/Lng columns.');return;}dataRows.forEach(row=>{const lat=parseFloat(row[idx.lat]);const lng=parseFloat(row[idx.lng]);const date=row[idx.date]?row[idx.date].trim():new Date().toISOString();if(isNaN(lat)||isNaN(lng)){skipped++;return;}const isDupe=state.scout.some(s=>Math.abs(s.lat-lat)<0.00001&&Math.abs(s.lng-lng)<0.00001&&s.date===date);if(isDupe){skipped++;return;}const site={id:Date.now()+Math.random(),name:idx.name>=0?row[idx.name].trim():'Imported',species:idx.species>=0?row[idx.species].trim():'',density:idx.density>=0?row[idx.density].trim():'Unknown',treatment:idx.treatment>=0?row[idx.treatment].trim():'',notes:idx.notes>=0?row[idx.notes].trim():'',lat,lng,date,archived:idx.archived>=0?row[idx.archived].trim().toLowerCase()==='true':false};state.scout.push(site);addScoutMarker(site);added++;});}else{const idx={name:headers.indexOf('name'),product:headers.indexOf('product'),epa:headers.indexOf('epa_reg'),method:headers.indexOf('method'),volume:headers.indexOf('volume'),rate:headers.indexOf('rate'),target:headers.indexOf('target'),applicator:headers.indexOf('applicator'),notes:headers.indexOf('notes'),lat:headers.indexOf('lat'),lng:headers.indexOf('lng'),date:headers.indexOf('date'),compliance:headers.indexOf('compliancelogged'),archived:headers.indexOf('archived')};if(idx.lat===-1||idx.lng===-1){alert('Missing Lat/Lng columns.');return;}dataRows.forEach(row=>{const lat=parseFloat(row[idx.lat]);const lng=parseFloat(row[idx.lng]);const date=row[idx.date]?row[idx.date].trim():new Date().toISOString();if(isNaN(lat)||isNaN(lng)){skipped++;return;}const isDupe=state.herb.some(a=>Math.abs(a.lat-lat)<0.00001&&Math.abs(a.lng-lng)<0.00001&&a.date===date);if(isDupe){skipped++;return;}const app={id:Date.now()+Math.random(),name:idx.name>=0?row[idx.name].trim():'Imported',product:idx.product>=0?row[idx.product].trim():'',epa:idx.epa>=0?row[idx.epa].trim():'',method:idx.method>=0?row[idx.method].trim():'',volume:idx.volume>=0?row[idx.volume].trim():'',rate:idx.rate>=0?row[idx.rate].trim():'',target:idx.target>=0?row[idx.target].trim():'',applicator:idx.applicator>=0?row[idx.applicator].trim():'',notes:idx.notes>=0?row[idx.notes].trim():'',lat,lng,date,complianceLogged:idx.compliance>=0?row[idx.compliance].trim().toLowerCase()==='true':false,archived:idx.archived>=0?row[idx.archived].trim().toLowerCase()==='true':false,followupDone:false,needsRetreat:false,followupNotes:'',followupDate:null};state.herb.push(app);addHerbMarker(app);added++;});}persist();renderAll();showToast(added>0?`Imported ${added} record${added!==1?'s':''}.${skipped>0?' '+skipped+' skipped.':''}`:`No new records — ${skipped} duplicate(s).`);syncAfterSave();};reader.readAsText(file);}
 function parseCSV(text){const rows=[];let row=[],field='',inQuote=false;for(let i=0;i<text.length;i++){const c=text[i],next=text[i+1];if(inQuote){if(c==='"'&&next==='"'){field+='"';i++;}else if(c==='"'){inQuote=false;}else{field+=c;}}else{if(c==='"'){inQuote=true;}else if(c===','){row.push(field);field='';}else if(c==='\n'||(c==='\r'&&next==='\n')){row.push(field);field='';if(row.some(f=>f!==''))rows.push(row);row=[];if(c==='\r')i++;}else{field+=c;}}}if(field||row.length){row.push(field);if(row.some(f=>f!==''))rows.push(row);}return rows;}
@@ -570,6 +680,7 @@ function parseCSV(text){const rows=[];let row=[],field='',inQuote=false;for(let 
 // ── HELPERS ───────────────────────────────────────────────
 function v(id){return document.getElementById(id).value.trim();}
 function fmt(iso){if(!iso)return'—';return new Date(iso).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}
+function fmtDateTime(iso){if(!iso)return'—';const d=new Date(iso);return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})+' '+d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});}
 function tr(label,val){return`<tr><td>${label}</td><td>${val}</td></tr>`;}
 function mkbtn(parent,text,cls,handler,stretch){const b=document.createElement('button');b.className='btn '+cls;if(stretch)b.style.flex='1';b.textContent=text;b.onclick=handler;parent.appendChild(b);}
 
